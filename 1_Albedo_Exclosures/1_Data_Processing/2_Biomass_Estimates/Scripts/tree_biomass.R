@@ -254,167 +254,308 @@
         
 #EXPORT PLOTS --------------------------------------------------------------------------------------
         
-        #WRITE CSV
+        #WRITE CSV W/ INDIVIDUAL TREE BIOMASS -------------
         write.csv(data, "1_Albedo_Exclosures/1_Data_Processing/2_Biomass_Estimates/Output/tree_biomass.csv")
-        
-        #Aggregate and plot
-        
-        
-                #Aggregate
-                plot_df <- aggregate(data$Biomass_g, by = list(data$Years_Since_Exclosure, data$Region, data$LocalityName, data$Treatment), FUN = sum)
                 
-                #Convert g to kg
-                plot_df$x <- plot_df$x / 1000
+        
+        #TOTAL SUBPLOT BIOMASS BY TREATMENT --------------
+                
+                #Aggregate/sum
+                plot_df <- aggregate(data$Biomass_g, by = list("Years_Since_Exclosure" = data$Years_Since_Exclosure,
+                                                               "Region" = data$Region,
+                                                               "LocalityName" = data$LocalityName,
+                                                               "Treatment" = data$Treatment,
+                                                               "Plot" = data$Plot), FUN = sum)
+                
+                colnames(plot_df)[6] <- "Summed_biomass_subplot_kg"
+                
+                #Convert summed biomass g to kg
+                plot_df$Summed_biomass_subplot_kg <- plot_df$Summed_biomass_subplot_kg / 1000
                 
                 #Convert to kg/m2
                 
                         #Each subplot has a radius of 2m - A = pi*r^2
                         subplot_area <- pi*(2^2) #12.57m2
                         
-                        #Sum 4 subplots together to get total plot area in m2
-                        plot_area <- 4*subplot_area #50.26548m2
-                        
                         #Divide each value for kg by plot_area
-                        plot_df$kg_m2 <- plot_df$x / plot_area
+                        plot_df$Subplot_biomass_kg_m2 <- plot_df$Summed_biomass_subplot_kg / subplot_area 
+                
+                                #Now we have biomass per unit area (kg/m2) for EACH CIRCULAR SUBPLOT in a given plot
                         
-                                #These look like they mesh well with the values produced by Kolstad et al. (2018) in 2016
                         
-                #Calculate excl-open plot biomass for each LocalityName
-                diff_df <- aggregate(plot_df$kg_m2, by = list(plot_df$Group.1, plot_df$Group.2, plot_df$Group.3), FUN = diff)
-                
-                #Add "Years Since Exclosure" variable & filter to used sites (n=37)
-                diff_df$Group.1 <- as.numeric(diff_df$Group.1)
-                diff_df$x <- as.numeric(diff_df$x)
-                diff_df$Group.3 <- as.factor(diff_df$Group.3)
-
-                
-
-                #Plots ---------
-                
-                plot_theme <- theme(plot.title = element_text(hjust = 0.5, size = 50, margin = margin(t = 40, b = 40)),
-                                    legend.position = "none",
-                                    axis.text.x = element_text(size = 22, margin = margin(t=16)),
-                                    axis.text.y = element_text(size = 22, margin = margin(r=16)),
-                                    axis.title.x = element_text(size = 34, margin = margin(t=40, b = 40)),
-                                    axis.title.y = element_text(size = 34, margin = margin(r=40)),
-                                    strip.text.x = element_text(size = 22))
-                
-                        #Total Standing Biomass ------------
-                
-                                #Faceted by site
-                                png(filename = "1_Albedo_Exclosures/1_Data_Processing/2_Biomass_Estimates/Output/Plots/biomass_diff_all_faceted.png",
-                                    width = 1600,
-                                    height = 1600,
-                                    bg = "white")
+                #Calculate mean biomass values + SEs for each 'year since exclosure' and treatment
                         
-                                ggplot(data = diff_df, aes(x = Group.1, y = x))+
-                                        geom_hline(yintercept = 0, color = "gray", linetype = 2) +
-                                        geom_point(size = 3) +
-                                        geom_smooth(span = 100, color = "black", lwd = 0.8) + 
-                                        facet_wrap(~ Group.3) +
+                        #Calculate average biomass (kg/m2) for each treatment in each year
+                        avg_biomass_df <- aggregate(plot_df$Subplot_biomass_kg_m2, by = list("Years_Since_Exclosure" = plot_df$Years_Since_Exclosure,
+                                                                                             "Treatment" = plot_df$Treatment), FUN = mean)
+                        colnames(avg_biomass_df)[3] <- "Mean_subplot_biomass_kg_m2"
+                        
+                        #Calculate SE for each year
+                        
+                                #Define function to calculate SE
+                                std <- function(x) sd(x)/sqrt(length(x))
+                                
+                                #Add SE placeholder column
+                                avg_biomass_df$SE <- as.numeric('')
+                                
+                                #Loop through years and calculate SE
+                                for(i in min(plot_df$Years_Since_Exclosure):max(plot_df$Years_Since_Exclosure)){
+                                        
+                                        #For year i, calculate SE for each treatment
+                                        
+                                                #Browsed
+                                                b_se <- std(plot_df$Subplot_biomass_kg_m2[plot_df$Years_Since_Exclosure == i & plot_df$Treatment == "B"])
+                                                
+                                                #Unbrowsed
+                                                ub_se <- std(plot_df$Subplot_biomass_kg_m2[plot_df$Years_Since_Exclosure == i & plot_df$Treatment == "UB"])
+                                                
+                                        #Add SEs to avg biomass df for year i
+                                        avg_biomass_df$SE[avg_biomass_df$Years_Since_Exclosure == i & avg_biomass_df$Treatment == "B"] <- b_se
+                                        avg_biomass_df$SE[avg_biomass_df$Years_Since_Exclosure == i & avg_biomass_df$Treatment == "UB"] <- ub_se
+                                        
+                                }
+                        
+                #Plot mean subplot biomass by treatment and year (w/ SE)
+                                
+                        #Plot
+                        ggplot(data = avg_biomass_df, aes(x = Years_Since_Exclosure, y = Mean_subplot_biomass_kg_m2, group = Treatment)) +
+                                geom_errorbar(aes(ymin = (Mean_subplot_biomass_kg_m2 - SE), ymax = (Mean_subplot_biomass_kg_m2 + SE)), colour="black", width=0.5, position = position_dodge(0.2)) +
+                                geom_point(aes(shape = Treatment), size = 1.75, position = position_dodge(0.2)) +
+                                geom_line(aes(linetype = Treatment)) +
+                                labs(x = "Years Since Exclosure", y = "Mean Subplot Biomass "~(kg/m^2)) +
+                                scale_x_continuous(breaks = c(1,3,5,7,9,11)) +
+                                theme_bw() +
+                                theme(
+                                        axis.title.x = element_text(size = 12, margin = margin(t=10)),
+                                        axis.title.y = element_text(size = 12, margin = margin(r=10))
+                                )
+                        
+                        
+                        
+                        
+                        
+                        
+        #SPECIES-SPECIFIC SUBPLOT BIOMASS BY TREATMENT --------------
+        
+                #Aggregate/sum
+                spec_df <- aggregate(data$Biomass_g, by = list("Years_Since_Exclosure" = data$Years_Since_Exclosure,
+                                                               "Region" = data$Region,
+                                                               "LocalityName" = data$LocalityName,
+                                                               "Treatment" = data$Treatment,
+                                                               "Plot" = data$Plot,
+                                                               "Taxa" = data$Taxa), FUN = sum)
+                
+                colnames(spec_df)[7] <- "Summed_biomass_subplot_kg"
+                
+                #Convert summed biomass g to kg
+                spec_df$Summed_biomass_subplot_kg <- spec_df$Summed_biomass_subplot_kg / 1000
+                
+                #Convert to kg/m2
+                
+                        #Divide each value for kg by plot_area
+                        spec_df$Subplot_biomass_kg_m2 <- spec_df$Summed_biomass_subplot_kg / subplot_area 
+                
+                                #Now we have biomass per unit area (kg/m2) for EACH SPECIES WITHIN
+                                #EACH CIRCULAR SUBPLOT in a given plot
+                        
+                #Calculate mean biomass values + SEs for each 'year since exclosure' and treatment
+                        
+                        #Calculate average biomass (kg/m2) for each treatment in each year
+                        spec_biomass_df <- aggregate(spec_df$Subplot_biomass_kg_m2, by = list("Years_Since_Exclosure" = spec_df$Years_Since_Exclosure,
+                                                                                             "Treatment" = spec_df$Treatment,
+                                                                                             "Taxa" = spec_df$Taxa), FUN = mean)
+                        colnames(spec_biomass_df)[4] <- "Mean_subplot_biomass_kg_m2"
+                        
+                        #Calculate SE for each year
+                        
+                                #Add SE placeholder column
+                                spec_biomass_df$SE <- as.numeric('')
+                                
+                                for(i in 1:nrow(spec_biomass_df)){
+                                        
+                                        #Get variables from current row
+                                        yse <- spec_biomass_df[i, "Years_Since_Exclosure"]
+                                        tr <- spec_biomass_df[i, "Treatment"]
+                                        tax <- as.character(spec_biomass_df[i, "Taxa"])
+                                        
+                                        #Calculate SE
+                                        se <- std(spec_df$Subplot_biomass_kg_m2[spec_df$Years_Since_Exclosure == yse &
+                                                                                        spec_df$Treatment == tr &
+                                                                                        spec_df$Taxa == tax])
+                                        
+                                        #Add to row
+                                        spec_biomass_df[i, "SE"] <- se
+                                        
+                                }
+                                
+                #Plot mean subplot biomass by species, treatment and year (w/ SE)
+                                
+                        #Plot
+                        
+                                #Add simplified Taxa column w/o Norwegian name
+                                spec_biomass_df$simple_taxa <- sub("^(\\S*\\s+\\S+).*", "\\1", spec_biomass_df$Taxa)
+                                
+                                ggplot(data = spec_biomass_df, aes(x = Years_Since_Exclosure, y = Mean_subplot_biomass_kg_m2, group = Treatment)) +
+                                        geom_errorbar(aes(ymin = (Mean_subplot_biomass_kg_m2 - SE), ymax = (Mean_subplot_biomass_kg_m2 + SE)), colour="black", width=0.5, position = position_dodge(0.3)) +
+                                        geom_point(aes(shape = Treatment), size = 1.75, position = position_dodge(0.3)) +
+                                        geom_line(aes(linetype = Treatment)) +
+                                        facet_wrap(~simple_taxa, nrow = 2) +
+                                        labs(x = "Years Since Exclosure", y = "Mean Subplot Biomass "~(kg/m^2)) +
+                                        scale_x_continuous(breaks = c(2,4,6,8,10)) +
                                         theme_bw() +
-                                        labs(x = "Years Since Exclosure", y = expression(atop("Difference in Total Standing Biomass "~(kg/m^2), "(Excl. - Open)")) ) +
-                                        scale_x_continuous(limits = c(1, 11), breaks = c(1, 3, 5, 7, 9, 11)) +
-                                        plot_theme
+                                        theme(
+                                                axis.title.x = element_text(size = 12, margin = margin(t=10)),
+                                                axis.title.y = element_text(size = 12, margin = margin(r=10))
+                                        )
+                
+                
+        
                                 
-                                dev.off()
                         
-                                #All sites
-                                png(filename = "1_Albedo_Exclosures/1_Data_Processing/2_Biomass_Estimates/Output/Plots/biomass_diff_all.png",
-                                    width = 1300,
-                                    height = 1300,
-                                    bg = "white")
-                                
-                                ggplot(data = diff_df, aes(x = Group.1, y = x))+
-                                        geom_hline(yintercept = 0, color = "gray", linetype = 2) +
-                                        geom_point(size = 3) +
-                                        geom_smooth(span = 20, color = "black", lwd = 0.8) + 
-                                        theme_bw() +
-                                        labs(x = "Years Since Exclosure", y = expression(atop("Difference in Total Standing Biomass "~(kg/m^2), "(Excl. - Open)")) ) +
-                                        scale_x_continuous(limits = c(1, 11), breaks = c(1, 3, 5, 7, 9, 11)) +
-                                        plot_theme
-                                
-                                dev.off()
+        #SIMPLIFIED SPECIES: DECIDUOUS, PINE, & SPRUCE ---------------
+        
+                #Assign 'group' to original data
                         
-                                
-                                
-                        #Species-specific Biomass ------------
+                        #Placeholder column
+                        data$Group <- as.character('')
                         
-                                #Aggregate by species --------
-                                        
-                                        #Aggregate
-                                        spec_df <- aggregate(data$Biomass_g, by = list(data$Years_Since_Exclosure, data$Region, data$LocalityName, data$Treatment, data$Taxa), FUN = sum)
-                                        
-                                        #Convert g to kg
-                                        spec_df$x <- spec_df$x / 1000
-                                        
-                                        #Convert to kg/m2
-                                        
-                                                #Divide each value for kg by plot_area
-                                                spec_df$kg_m2 <- spec_df$x / plot_area
-                                                
-                                        #Calculate excl-open plot biomass for each LocalityName
-                                        spec_diff_df <- aggregate(spec_df$kg_m2, by = list(spec_df$Group.1, spec_df$Group.2, spec_df$Group.3, spec_df$Group.5), FUN = diff)
-                                        
-                                        #Prep columns
-                                        spec_diff_df$Group.1 <- as.numeric(spec_diff_df$Group.1)
-                                        spec_diff_df$x <- as.numeric(as.character(spec_diff_df$x))
-                                        spec_diff_df$Group.2 <- as.factor(spec_diff_df$Group.2)
-                                        spec_diff_df$Group.3 <- as.factor(spec_diff_df$Group.3)
-                                        spec_diff_df$Group.4 <- as.factor(spec_diff_df$Group.4)
-                                        
-                                #Plot ---------
-                                        
-                                        #Faceted by site
-                                        png(filename = "1_Albedo_Exclosures/1_Data_Processing/2_Biomass_Estimates/Output/Plots/biomass_diff_spec_faceted.png",
-                                            width = 1600,
-                                            height = 1600,
-                                            bg = "white")
-                                        
-                                        ggplot(data = subset(spec_diff_df, Group.3 != "No occurrence (Ingen)"), aes(x = Group.1, y = x, color = Group.4))+
-                                                geom_hline(yintercept = 0, color = "gray", linetype = 2) +
-                                                geom_point(size = 3) +
-                                                geom_smooth(span = 100, lwd = 0.8) + 
-                                                facet_wrap(~ Group.3) +
-                                                theme_bw() +
-                                                labs(x = "Years Since Exclosure", y = expression(atop("Difference in Standing Biomass "~(kg/m^2), "(Excl. - Open)")), color = "Species") +
-                                                scale_x_continuous(limits = c(1, 11), breaks = c(1, 3, 5, 7, 9, 11)) +
-                                                plot_theme +
-                                                theme(
-                                                        legend.position = "bottom",
-                                                        legend.title = element_text(size = 30, margin = margin(t=16)),
-                                                        legend.text = element_text(size = 22, margin = margin(t=16))
-                                                )
-                                                
-                                        
-                                        dev.off()
-                                        
-                                        #All sites
-                                        png(filename = "1_Albedo_Exclosures/1_Data_Processing/2_Biomass_Estimates/Output/Plots/biomass_spec_diff_all.png",
-                                            width = 1800,
-                                            height = 1300,
-                                            bg = "white")
-                                        
-                                        ggplot(data = subset(spec_diff_df, Group.3 != "No occurrence (Ingen)"), aes(x = Group.1, y = x, color = Group.4))+
-                                                geom_hline(yintercept = 0, color = "gray", linetype = 2) +
-                                                geom_point(size = 3) +
-                                                geom_smooth(span = 100, lwd = 0.8, se = F) + 
-                                                theme_bw() +
-                                                labs(x = "Years Since Exclosure", y = expression(atop("Difference in Standing Biomass "~(kg/m^2), "(Excl. - Open)")), color = "Species") +
-                                                scale_x_continuous(limits = c(1, 11), breaks = c(1, 3, 5, 7, 9, 11)) +
-                                                plot_theme +
-                                                theme(
-                                                        legend.position = "bottom",
-                                                        legend.title = element_text(size = 30, margin = margin(t=16)),
-                                                        legend.text = element_text(size = 22, margin = margin(t=16))
-                                                )
-                                        
-                                        dev.off()
-                                        
-                                        
-                                                
-                                                
+                        #Deciduous
+                        decid <- c("Betula pendula (Lavlandbjørk)", "Betula pubescens (Bjørk)", "Salix caprea (Selje)", "Sorbus aucuparia (Rogn)")
+                        data$Group[data$Taxa %in% decid] <- 'Deciduous'
                         
+                        #Pine
+                        data$Group[data$Taxa == "Pinus sylvestris (Furu)"] <- 'Pine'
+                        
+                        #Spruce
+                        data$Group[data$Taxa == "Picea abies (Gran)" | data$Taxa == "Juniperus communis (Einer)"] <- 'Spruce'
+                     
+                           
+                #Aggregate/sum by group instead of taxa
+                spec_simp <- aggregate(data$Biomass_g, by = list("Years_Since_Exclosure" = data$Years_Since_Exclosure,
+                                                               "Region" = data$Region,
+                                                               "LocalityName" = data$LocalityName,
+                                                               "Treatment" = data$Treatment,
+                                                               "Plot" = data$Plot,
+                                                               "Group" = data$Group), FUN = sum)
+                                
+                colnames(spec_simp)[7] <- "Summed_biomass_subplot_kg"
+                
+                #Convert summed biomass g to kg
+                spec_simp$Summed_biomass_subplot_kg <- spec_simp$Summed_biomass_subplot_kg / 1000
+                
+                #Convert to kg/m2
+                
+                        #Divide each value for kg by plot_area
+                        spec_simp$Subplot_biomass_kg_m2 <- spec_simp$Summed_biomass_subplot_kg / subplot_area 
+                        
+                        #Now we have biomass per unit area (kg/m2) for EACH GROUP (DECIDUOUS, PINE, OR SPRUCE) WITHIN
+                        #EACH CIRCULAR SUBPLOT in a given plot
+                        
+                        
+                #Calculate mean biomass values + SEs for each 'year since exclosure' and treatment
+                        
+                        #Calculate average biomass (kg/m2) for each treatment in each year
+                        spec_simp_bio <- aggregate(spec_simp$Subplot_biomass_kg_m2, by = list("Years_Since_Exclosure" = spec_simp$Years_Since_Exclosure,
+                                                                                              "Treatment" = spec_simp$Treatment,
+                                                                                              "Group" = spec_simp$Group), FUN = mean)
+                        colnames(spec_simp_bio)[4] <- "Mean_subplot_biomass_kg_m2"
+                        
+                        #Calculate SE for each year
+                        
+                                #Add SE placeholder column
+                                spec_simp_bio$SE <- as.numeric('')
+                                
+                                for(i in 1:nrow(spec_simp_bio)){
+                                        
+                                        #Get variables from current row
+                                        yse <- spec_simp_bio[i, "Years_Since_Exclosure"]
+                                        tr <- spec_simp_bio[i, "Treatment"]
+                                        group <- as.character(spec_simp_bio[i, "Group"])
+                                        
+                                        #Calculate SE
+                                        se <- std(spec_simp$Subplot_biomass_kg_m2[spec_simp$Years_Since_Exclosure == yse &
+                                                                                        spec_simp$Treatment == tr &
+                                                                                        spec_simp$Group == group])
+                                        
+                                        #Add to row
+                                        spec_simp_bio[i, "SE"] <- se
+                                        
+                                }
+                                
+                #Plot mean subplot biomass by species, treatment and year (w/ SE)
+                                
+                        #Plot
+                        ggplot(data = spec_simp_bio, aes(x = Years_Since_Exclosure, y = Mean_subplot_biomass_kg_m2, group = Treatment)) +
+                                geom_errorbar(aes(ymin = (Mean_subplot_biomass_kg_m2 - SE), ymax = (Mean_subplot_biomass_kg_m2 + SE)), colour="black", width=0.5, position = position_dodge(0.3)) +
+                                geom_point(aes(shape = Treatment), size = 1.75, position = position_dodge(0.3)) +
+                                geom_line(aes(linetype = Treatment)) +
+                                facet_wrap(~Group, nrow = 3) +
+                                labs(x = "Years Since Exclosure", y = "Mean Subplot Biomass "~(kg/m^2)) +
+                                scale_x_continuous(breaks = c(1,3,5,7,9,11)) +
+                                theme_bw() +
+                                theme(
+                                        axis.title.x = element_text(size = 12, margin = margin(t=10)),
+                                        axis.title.y = element_text(size = 12, margin = margin(r=10))
+                                )
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+        #BY GROUP AND REGION (I.E. DIFFERENT MOOSE DENSITIES)
+        
+                #Use 'spec_simp' df
+                
+                        #Calculate mean biomass values + SEs for each 'year since exclosure' and treatment
+                        
+                                #Calculate average biomass (kg/m2) for each treatment in each year
+                                spec_simp_region <- aggregate(spec_simp$Subplot_biomass_kg_m2, by = list("Years_Since_Exclosure" = spec_simp$Years_Since_Exclosure,
+                                                                                                         "Region" = spec_simp$Region,
+                                                                                                      "Treatment" = spec_simp$Treatment,
+                                                                                                      "Group" = spec_simp$Group), FUN = mean)
+                                colnames(spec_simp_region)[5] <- "Mean_subplot_biomass_kg_m2"
+                                
+                                #Calculate SE for each year
+                                
+                                #Add SE placeholder column
+                                spec_simp_region$SE <- as.numeric('')
+                                
+                                for(i in 1:nrow(spec_simp_region)){
+                                        
+                                        #Get variables from current row
+                                        yse <- spec_simp_region[i, "Years_Since_Exclosure"]
+                                        tr <- spec_simp_region[i, "Treatment"]
+                                        reg <- spec_simp_region[i, "Region"]
+                                        group <- as.character(spec_simp_region[i, "Group"])
+                                        
+                                        #Calculate SE
+                                        se <- std(spec_simp$Subplot_biomass_kg_m2[spec_simp$Years_Since_Exclosure == yse &
+                                                                                          spec_simp$Region == reg &
+                                                                                          spec_simp$Treatment == tr &
+                                                                                          spec_simp$Group == group])
+                                        
+                                        #Add to row
+                                        spec_simp_region[i, "SE"] <- se
+                                        
+                                }
+                                
+                #Plot mean subplot biomass by group, region, treatment and year (w/ SE)
+                                
+                        #Plot
+                        ggplot(data = spec_simp_region, aes(x = Years_Since_Exclosure, y = Mean_subplot_biomass_kg_m2, group = Treatment)) +
+                                geom_errorbar(aes(ymin = (Mean_subplot_biomass_kg_m2 - SE), ymax = (Mean_subplot_biomass_kg_m2 + SE)), colour="black", width=0.5, position = position_dodge(0.3)) +
+                                geom_point(aes(shape = Treatment), size = 1.75, position = position_dodge(0.3)) +
+                                geom_line(aes(linetype = Treatment)) +
+                                facet_grid(Region~Group) +
+                                labs(x = "Years Since Exclosure", y = "Mean Subplot Biomass "~(kg/m^2)) +
+                                scale_x_continuous(breaks = c(1,3,5,7,9,11)) +
+                                theme_bw() +
+                                theme(
+                                        axis.title.x = element_text(size = 12, margin = margin(t=10)),
+                                        axis.title.y = element_text(size = 12, margin = margin(r=10))
+                                )
                         
 
                 
