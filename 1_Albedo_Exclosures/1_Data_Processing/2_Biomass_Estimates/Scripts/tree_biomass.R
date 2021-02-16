@@ -108,9 +108,25 @@
                 data <- data[data$LocalityCode %in% used_sites,] #Brings us to 37 LocalityNames - looks good
                 
         #Add year column
-        dates <- as.POSIXct(data$X_Date, format = "%m/%d/%Y %H:%M:%S")
-        dates <- format(dates, format="%Y")
-        data$Year <- dates
+                
+                #Set dates
+                dates <- as.POSIXct(data$X_Date, format = "%m/%d/%Y %H:%M:%S")
+                attr(dates, "tzone") <- "Europe/Oslo"
+                
+                        # Make sure to set timezone to CET here - was running into issues with measurements in Jan 2016 being considered
+                        # as Dec 2015
+                
+                #Double-check this (DON'T USE as.POS)
+                dates_ver <- data.frame("LocalityCode" = data$LocalityCode,
+                                    "Original_Date" = data$X_Date,
+                                    "Formatted_Date" = dates,
+                                    "Final_Year" = format(dates, format="%Y"))
+                
+                dates <- format(dates, format="%Y")
+                data$Year <- dates
+                
+                        #FIXED YEAR ISSUE MENTIONED ABOVE - DATES SHOULD NOW BE CORRECT
+                
 
 #END DATA FILTERING -------------------------------------------------------------------------------------
         

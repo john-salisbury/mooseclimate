@@ -20,11 +20,14 @@
         library(dplyr)
         library(tidyr)
         library(ggplot2)
+        library(gridExtra)
+        library(cowplot)
         library(sf)
         library(raster)
         library(zoo)
         library(lme4)
         library(lmerTest)
+        library(beepr)
         
 ###END PACKAGES ----------------------------------------------------------------------------------------
 
@@ -243,21 +246,23 @@
                 #Loop through all plots of all sites in all months of all years
                 for(i in 1:length(used_sites)){
                         
+                        print(i)
+                        
                         #Site info
                         
-                                #Region
-                                reg <- site_data$Region[site_data$LocalityCode == used_sites[i]]
+                                #Region (MAKE SURE TO GET UPPERCASE VERSION OF REGION - grab from 'plot_volumes' df)
+                                reg <- plot_volumes$Region[plot_volumes$LocalityCode == used_sites[i]][1]
                         
                                 #LocalityName
                                 site <- site_data$LocalityName[site_data$LocalityCode == used_sites[i]]
                         
                                 #LocalityCode
-                                loc <- used_sites[i]
+                                loc <- as.character(used_sites[i])
                         
                                 #Treatment
                                 if(site_data$Treatment[site_data$LocalityCode == used_sites[i]] == "open"){
                                         tr <- "B"
-                                } else if (site_data$LocalityName[site_data$LocalityCode == used_sites[i]] == "exclosure"){
+                                } else if (site_data$Treatment[site_data$LocalityCode == used_sites[i]] == "exclosure"){
                                         tr <- "UB"
                                 }
                                 
@@ -386,6 +391,8 @@
                         
                         
                 }
+                
+                beep(8)
         
                 
         #BIND COMPOSITE ALBEDO DF TO INITIAL ALBEDO DF
@@ -406,10 +413,10 @@
 
 
                 
-#CALCULATE MEAN ALBEDO -------------------------------------------------------------------------------------
+#CALCULATE MEAN ALBEDO AT SUBPLOT LEVEL -------------------------------------------------------------------------------------
         
         #START HERE IF ALBEDO ALREADY SAVED TO CSV ------------------
-        final_albedo <- read.csv("1_Albedo_Exclosures/Approach_1B/Output/albedo_estimates/albedo_estimates.csv", header = T)
+        final_albedo <- read.csv("1_Albedo_Exclosures/1_Data_Processing/4_Albedo_Estimates/Output/subplot_albedo_estimates.csv", header = T)
                 
         
         #Aggregate means for each group, month, and year since exclosure
@@ -451,8 +458,25 @@
                         
                 }
                 
+        #Add a 'season' variable for further grouping
                 
-#END CALCULATE MEAN ALBEDO ---------------------------------------------------------------------------------- 
+                #Placeholder column
+                albedo_means$Season <- as.character('')
+                
+                #Conditions
+                albedo_means$Season[albedo_means$Month %in% c(1:3)] <- "Winter"
+                albedo_means$Season[albedo_means$Month %in% c(4:6)] <- "Spring"
+                albedo_means$Season[albedo_means$Month %in% c(7:9)] <- "Summer"
+                albedo_means$Season[albedo_means$Month %in% c(10:12)] <- "Autumn"
+                
+                #Set as factor
+                albedo_means$Season <- as.factor(albedo_means$Season)
+                
+        
+        
+                
+                
+#END CALCULATE MEAN ALBEDO AT SUBPLOT LEVEL ---------------------------------------------------------------------------------- 
                 
 
 
@@ -462,10 +486,10 @@
 
 
 
-#DATA EXPLORATION ---------------------------------------------------------------------------------
+#PLOT ALBEDO AT SUBPLOT LEVEL ---------------------------------------------------------------------------------
         
                 
-        #Faceted by Month
+        #COMPOSITE ALBEDO -----------
                 
                 #Set strip text labels
                 months <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
@@ -474,92 +498,892 @@
                 }
                 
                 #All Sites
-                pd <- position_dodge(0.5)
-                
-#NOTE: SCATTERPLOTS ARE SUPER VARIABLE AND NOT VERY USEFUL FOR IDENTIFYING TRENDS - GO WITH MEANS + SE BY TREATMENT
+                pd <- position_dodge(0.1)
                 
                 
-                ggplot(subset(albedo_means, Group == "Birch"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, group = Treatment)) +
-                        geom_errorbar(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE)), colour="black", width=1, position = pd) +
-                        geom_line(position = pd, aes(linetype = Treatment)) +
-                        geom_point(position = pd, aes(shape = Treatment)) +
-                        theme_bw() +
-                        facet_wrap(~ Month, ncol = 6, labeller = month_labs) +
-                        labs(x = "Years Since Exclosure", y = "Mean Deciduous Albedo") +
-                        scale_x_continuous(breaks = c(2,4,6,8,10)) +
-                        scale_color_discrete(labels = c("Browsed", "Unbrowsed")) 
-                        theme(plot.title = element_text(hjust = 0.5, size = 50, margin = margin(t = 40, b = 40)),
-                              axis.text.x = element_text(size = 14, margin = margin(t=16)),
-                              axis.text.y = element_text(size = 22, margin = margin(r=16)),
-                              axis.title.x = element_text(size = 34, margin = margin(t=40, b = 40)),
-                              axis.title.y = element_text(size = 34, margin = margin(r=40)),
-                              strip.text.x = element_text(size = 22),
-                              legend.title = element_text(size = 26),
-                              legend.text = element_text(size = 23, margin = margin(t=10)),
-                              legend.position = "bottom") +
-                        guides(shape = F) +
-                        guides(linetype = F)
+                #COMPLEX PLOT  -------------
                 
+                        #Winter
+                        g1 <- ggplot(subset(albedo_means, Group == "Composite" & Season == "Winter"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                                geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.35, lwd = 0) +
+                                geom_point(size = 0.4) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 12, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_y_continuous(limits = c(0.325, 0.525)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                ggtitle("Winter") +
+                                theme(
+                                        legend.position = "none",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10)),
+                                        panel.grid.minor = element_blank(),
+                                        plot.title = element_text(hjust = 0.5, size = 14)
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        g1
+                                
+                        #Spring
+                        g2 <- ggplot(subset(albedo_means, Group == "Composite" & Season == "Spring"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                                geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.35, lwd = 0) +
+                                geom_point(size = 0.4) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 12, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_y_continuous(limits = c(0.1425, 0.35)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                ggtitle("Spring") +
+                                theme(
+                                        legend.position = "none",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10)),
+                                        panel.grid.minor = element_blank(),
+                                        plot.title = element_text(hjust = 0.5, size = 14)
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        g2
+                        
+                        #Summer
+                        g3 <- ggplot(subset(albedo_means, Group == "Composite" & Season == "Summer"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                                geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.35, lwd = 0) +
+                                geom_point(size = 0.4) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 12, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_y_continuous(limits = c(0.05, 0.25)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                ggtitle("Summer") +
+                                theme(
+                                        legend.position = "none",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10)),
+                                        panel.grid.minor = element_blank(),
+                                        plot.title = element_text(hjust = 0.5, size = 14)
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        g3
+                        
+                        #Autumn
+                        g4 <- ggplot(subset(albedo_means, Group == "Composite" & Season == "Autumn"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                                geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.35, lwd = 0) +
+                                geom_point(size = 0.4) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 12, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_y_continuous(limits = c(0.1425, 0.35)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                ggtitle("Autumn") +
+                                theme(
+                                        legend.position = "none",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10)),
+                                        panel.grid.minor = element_blank(),
+                                        plot.title = element_text(hjust = 0.5, size = 14)
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        g4
+                                
+                                
+                        #Common legend
+                        
+                                #Legend function
+                                extract_legend <- function(my_ggp) {
+                                        step1 <- ggplot_gtable(ggplot_build(my_ggp))
+                                        step2 <- which(sapply(step1$grobs, function(x) x$name) == "guide-box")
+                                        step3 <- step1$grobs[[step2]]
+                                        return(step3)
+                                }
+                        
+                                g1_l <- ggplot(subset(albedo_means, Group == "Composite" & Season == "Winter"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                                        geom_errorbar(position = pd, aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE)), colour="#666666", width=0.7) +
+                                        geom_line(position = pd, aes(linetype = Treatment), lwd = 0.5) +
+                                        geom_point(position = pd, size = 1.4) +
+                                        theme_bw() +
+                                        facet_wrap(~ Month, ncol = 12, labeller = month_labs) +
+                                        labs(x = "Years Since Exclosure", y = "Mean Albedo") +
+                                        scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                        scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                        ggtitle("Winter") +
+                                        theme(
+                                                legend.position = "top",
+                                                legend.background = element_rect(fill = "#fafafa", color = "#e6e6e6")
+                                        ) +
+                                        guides(shape = F) +
+                                        guides(linetype = F)
+
+                                #Extract legend
+                                shared_legend <- extract_legend(g1_l)
+                                
+                        #Build complex plot
+                        middle_rows <- plot_grid(g1, NULL, g2, NULL, NULL, NULL, g3, NULL, g4, ncol = 3, nrow = 3, rel_widths = c(0.475,0.05,0.475), rel_heights = c(0.475,0.05, 0.475))
+                        final_plot <- plot_grid(shared_legend, middle_rows, ncol = 1, rel_heights = c(0.1,0.9) )
+                        
+                        #Save as SVG    
+                        ggsave('albedo_comp_subplots_complex.svg',
+                               final_plot,
+                               "svg",
+                               '1_Albedo_Exclosures/1_Data_Processing/4_Albedo_Estimates/Output/Plots/Subplot_Resolution/Composite',
+                               scale = 1.25)
+                        
+        
                 
-                #Pine Means
-                png(filename = "1_Albedo_Exclosures/Approach_1B/Output/albedo_estimates/means/albedo_estimates_pine.png",
-                    width = 1600,
-                    height = 1200,
-                    bg = "white")
+                #"STANDARD" FACETED PLOTS
+                                
+                        #ERROR BARS FOR SE
+                        ggplot(subset(albedo_means, Group == "Composite"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment)) +
+                                geom_errorbar(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE)), colour="#666666", width=0.55, position = pd) +
+                                geom_line(position = pd, aes(color = Treatment), lwd = 0.5) +
+                                geom_point(position = pd, aes(shape = Treatment, color = Treatment), size = 1) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 6, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                scale_y_continuous(limits = c(0.14, 0.457), breaks = c(0.15,0.2,0.25,0.3,0.35,0.4,0.45)) +
+                                theme(
+                                        legend.position = "bottom",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10))
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        
+                                #Export manually
+                        
+                        #SHADING FOR SE
+                        ggplot(subset(albedo_means, Group == "Composite"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment)) +
+                                geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.3, lwd = 0) +
+                                geom_point(position = pd, aes(shape = Treatment, color = Treatment), size = 0.6) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 6, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                scale_y_continuous(limits = c(0.14, 0.457), breaks = c(0.15,0.2,0.25,0.3,0.35,0.4,0.45)) +
+                                theme(
+                                        legend.position = "bottom",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10))
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F) +
+                                guides(fill = F)
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+        #DECIDUOUS SUBPLOT ALBEDO --------------------------------
+                        
+                        
+                #COMPLEX PLOT  -------------
+                        
+                        #Winter
+                        g1 <- ggplot(subset(albedo_means, Group == "Birch" & Season == "Winter"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                                geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.35, lwd = 0) +
+                                geom_point(size = 0.4) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 12, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo (Deciduous)") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_y_continuous(limits = c(0.325, 0.525)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                ggtitle("Winter") +
+                                theme(
+                                        legend.position = "none",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10)),
+                                        panel.grid.minor = element_blank(),
+                                        plot.title = element_text(hjust = 0.5, size = 14)
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        g1
+                        
+                        #Spring
+                        g2 <- ggplot(subset(albedo_means, Group == "Birch" & Season == "Spring"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                                geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.35, lwd = 0) +
+                                geom_point(size = 0.4) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 12, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo (Deciduous)") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_y_continuous(limits = c(0.1425, 0.35)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                ggtitle("Spring") +
+                                theme(
+                                        legend.position = "none",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10)),
+                                        panel.grid.minor = element_blank(),
+                                        plot.title = element_text(hjust = 0.5, size = 14)
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        g2
+                        
+                        #Summer
+                        g3 <- ggplot(subset(albedo_means, Group == "Birch" & Season == "Summer"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                                geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.35, lwd = 0) +
+                                geom_point(size = 0.4) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 12, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo (Deciduous)") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_y_continuous(limits = c(0.05, 0.25)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                ggtitle("Summer") +
+                                theme(
+                                        legend.position = "none",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10)),
+                                        panel.grid.minor = element_blank(),
+                                        plot.title = element_text(hjust = 0.5, size = 14)
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        g3
+                        
+                        #Autumn
+                        g4 <- ggplot(subset(albedo_means, Group == "Birch" & Season == "Autumn"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                                geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.35, lwd = 0) +
+                                geom_point(size = 0.4) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 12, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo (Deciduous)") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_y_continuous(limits = c(0.1425, 0.35)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                ggtitle("Autumn") +
+                                theme(
+                                        legend.position = "none",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10)),
+                                        panel.grid.minor = element_blank(),
+                                        plot.title = element_text(hjust = 0.5, size = 14)
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        g4
+                        
+                        
+                        #Common legend
+                        
+                        #Legend function
+                        extract_legend <- function(my_ggp) {
+                                step1 <- ggplot_gtable(ggplot_build(my_ggp))
+                                step2 <- which(sapply(step1$grobs, function(x) x$name) == "guide-box")
+                                step3 <- step1$grobs[[step2]]
+                                return(step3)
+                        }
+                        
+                        g1_l <- ggplot(subset(albedo_means, Group == "Birch" & Season == "Winter"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                                geom_errorbar(position = pd, aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE)), colour="#666666", width=0.7) +
+                                geom_line(position = pd, aes(linetype = Treatment), lwd = 0.5) +
+                                geom_point(position = pd, size = 1.4) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 12, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Mean Albedo") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                ggtitle("Winter") +
+                                theme(
+                                        legend.position = "top",
+                                        legend.background = element_rect(fill = "#fafafa", color = "#e6e6e6")
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        
+                        #Extract legend
+                        shared_legend <- extract_legend(g1_l)
+                        
+                        #Build complex plot
+                        middle_rows <- plot_grid(g1, NULL, g2, NULL, NULL, NULL, g3, NULL, g4, ncol = 3, nrow = 3, rel_widths = c(0.475,0.05,0.475), rel_heights = c(0.475,0.05, 0.475))
+                        final_plot <- plot_grid(shared_legend, middle_rows, ncol = 1, rel_heights = c(0.1,0.9) )
+                        
+                        #Save as SVG    
+                        ggsave('albedo_decid_subplots_complex.svg',
+                               final_plot,
+                               "svg",
+                               '1_Albedo_Exclosures/1_Data_Processing/4_Albedo_Estimates/Output/Plots/Subplot_Resolution/Deciduous',
+                               scale = 1.25)
+                        
+                        
+                        
+                #"STANDARD" FACETED PLOTS
+                        
+                        #ERROR BARS FOR SE
+                        ggplot(subset(albedo_means, Group == "Birch"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment)) +
+                                geom_errorbar(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE)), colour="#666666", width=0.55, position = pd) +
+                                geom_line(position = pd, aes(color = Treatment), lwd = 0.5) +
+                                geom_point(position = pd, aes(shape = Treatment, color = Treatment), size = 1) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 6, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo (Deciduous)") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                scale_y_continuous(limits = c(0.14, 0.48), breaks = c(0.15,0.2,0.25,0.3,0.35,0.4,0.45, 0.50)) +
+                                theme(
+                                        legend.position = "bottom",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10))
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        
+                                #Export manually
+                        
+                        #SHADING FOR SE
+                        ggplot(subset(albedo_means, Group == "Birch"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment)) +
+                                geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.3, lwd = 0) +
+                                geom_point(position = pd, aes(shape = Treatment, color = Treatment), size = 0.6) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 6, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo (Deciduous)") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                scale_y_continuous(limits = c(0.14, 0.48), breaks = c(0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.50)) +
+                                theme(
+                                        legend.position = "bottom",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10))
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F) +
+                                guides(fill = F)
+                        
+                        
+
+                        
+                        
+                        
+                        
+                        
+                        
+
+        #PINE SUBPLOT ALBEDO --------------
+                        
+                        
+                #COMPLEX PLOT  -------------
+                        
+                        #Winter
+                        g1 <- ggplot(subset(albedo_means, Group == "Pine" & Season == "Winter"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                                geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.35, lwd = 0) +
+                                geom_point(size = 0.4) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 12, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo (Pine)") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_y_continuous(limits = c(0.325, 0.525)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                ggtitle("Winter") +
+                                theme(
+                                        legend.position = "none",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10)),
+                                        panel.grid.minor = element_blank(),
+                                        plot.title = element_text(hjust = 0.5, size = 14)
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        g1
+                        
+                        #Spring
+                        g2 <- ggplot(subset(albedo_means, Group == "Pine" & Season == "Spring"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                                geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.35, lwd = 0) +
+                                geom_point(size = 0.4) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 12, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo (Pine)") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_y_continuous(limits = c(0.13, 0.35)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                ggtitle("Spring") +
+                                theme(
+                                        legend.position = "none",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10)),
+                                        panel.grid.minor = element_blank(),
+                                        plot.title = element_text(hjust = 0.5, size = 14)
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        g2
+                        
+                        #Summer
+                        g3 <- ggplot(subset(albedo_means, Group == "Pine" & Season == "Summer"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                                geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.35, lwd = 0) +
+                                geom_point(size = 0.4) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 12, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo (Pine)") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_y_continuous(limits = c(0.05, 0.25)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                ggtitle("Summer") +
+                                theme(
+                                        legend.position = "none",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10)),
+                                        panel.grid.minor = element_blank(),
+                                        plot.title = element_text(hjust = 0.5, size = 14)
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        g3
+                        
+                        #Autumn
+                        g4 <- ggplot(subset(albedo_means, Group == "Pine" & Season == "Autumn"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                                geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.35, lwd = 0) +
+                                geom_point(size = 0.4) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 12, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo (Pine)") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_y_continuous(limits = c(0.13, 0.35)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                ggtitle("Autumn") +
+                                theme(
+                                        legend.position = "none",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10)),
+                                        panel.grid.minor = element_blank(),
+                                        plot.title = element_text(hjust = 0.5, size = 14)
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        g4
+                        
+                        
+                        #Common legend
+                        
+                        #Legend function
+                        extract_legend <- function(my_ggp) {
+                                step1 <- ggplot_gtable(ggplot_build(my_ggp))
+                                step2 <- which(sapply(step1$grobs, function(x) x$name) == "guide-box")
+                                step3 <- step1$grobs[[step2]]
+                                return(step3)
+                        }
+                        
+                        g1_l <- ggplot(subset(albedo_means, Group == "Pine" & Season == "Winter"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                                geom_errorbar(position = pd, aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE)), colour="#666666", width=0.7) +
+                                geom_line(position = pd, aes(linetype = Treatment), lwd = 0.5) +
+                                geom_point(position = pd, size = 1.4) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 12, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Mean Albedo") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                ggtitle("Winter") +
+                                theme(
+                                        legend.position = "top",
+                                        legend.background = element_rect(fill = "#fafafa", color = "#e6e6e6")
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        
+                        #Extract legend
+                        shared_legend <- extract_legend(g1_l)
+                        
+                        #Build complex plot
+                        middle_rows <- plot_grid(g1, NULL, g2, NULL, NULL, NULL, g3, NULL, g4, ncol = 3, nrow = 3, rel_widths = c(0.475,0.05,0.475), rel_heights = c(0.475,0.05, 0.475))
+                        final_plot <- plot_grid(shared_legend, middle_rows, ncol = 1, rel_heights = c(0.1,0.9) )
+                        
+                        #Save as SVG    
+                        ggsave('albedo_pine_subplots_complex.svg',
+                               final_plot,
+                               "svg",
+                               '1_Albedo_Exclosures/1_Data_Processing/4_Albedo_Estimates/Output/Plots/Subplot_Resolution/Pine',
+                               scale = 1.25)
+                        
+                        
+                        
+                #"STANDARD" FACETED PLOTS
+                        
+                        #ERROR BARS FOR SE
+                        ggplot(subset(albedo_means, Group == "Pine"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment)) +
+                                geom_errorbar(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE)), colour="#666666", width=0.55, position = pd) +
+                                geom_line(position = pd, aes(color = Treatment), lwd = 0.5) +
+                                geom_point(position = pd, aes(shape = Treatment, color = Treatment), size = 1) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 6, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo (Pine)") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                scale_y_continuous(limits = c(0.14, 0.45), breaks = c(0.15,0.2,0.25,0.3,0.35,0.4,0.45)) +
+                                theme(
+                                        legend.position = "bottom",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10))
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        
+                                #Export manually
+                        
+                        #SHADING FOR SE
+                        ggplot(subset(albedo_means, Group == "Pine"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment)) +
+                                geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.3, lwd = 0) +
+                                geom_point(position = pd, aes(shape = Treatment, color = Treatment), size = 0.6) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 6, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo (Pine)") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                scale_y_continuous(limits = c(0.14, 0.45), breaks = c(0.15,0.2,0.25,0.3,0.35,0.4,0.45)) +
+                                theme(
+                                        legend.position = "bottom",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10))
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F) +
+                                guides(fill = F)
+
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+        #SPRUCE SUBPLOT ALBEDO --------------
+                        
+                        
+                #COMPLEX PLOT  -------------
+                        
+                        #Winter
+                        g1 <- ggplot(subset(albedo_means, Group == "Spruce" & Season == "Winter"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                                geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.35, lwd = 0) +
+                                geom_point(size = 0.4) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 12, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo (Spruce)") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_y_continuous(limits = c(0.325, 0.525)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                ggtitle("Winter") +
+                                theme(
+                                        legend.position = "none",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10)),
+                                        panel.grid.minor = element_blank(),
+                                        plot.title = element_text(hjust = 0.5, size = 14)
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        g1
+                        
+                        #Spring
+                        g2 <- ggplot(subset(albedo_means, Group == "Spruce" & Season == "Spring"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                                geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.35, lwd = 0) +
+                                geom_point(size = 0.4) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 12, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo (Spruce)") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_y_continuous(limits = c(0.13, 0.35)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                ggtitle("Spring") +
+                                theme(
+                                        legend.position = "none",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10)),
+                                        panel.grid.minor = element_blank(),
+                                        plot.title = element_text(hjust = 0.5, size = 14)
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        g2
+                        
+                        #Summer
+                        g3 <- ggplot(subset(albedo_means, Group == "Spruce" & Season == "Summer"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                                geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.35, lwd = 0) +
+                                geom_point(size = 0.4) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 12, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo (Spruce)") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_y_continuous(limits = c(0.05, 0.25)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                ggtitle("Summer") +
+                                theme(
+                                        legend.position = "none",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10)),
+                                        panel.grid.minor = element_blank(),
+                                        plot.title = element_text(hjust = 0.5, size = 14)
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        g3
+                        
+                        #Autumn
+                        g4 <- ggplot(subset(albedo_means, Group == "Spruce" & Season == "Autumn"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                                geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.35, lwd = 0) +
+                                geom_point(size = 0.4) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 12, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo (Spruce)") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_y_continuous(limits = c(0.13, 0.35)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                ggtitle("Autumn") +
+                                theme(
+                                        legend.position = "none",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10)),
+                                        panel.grid.minor = element_blank(),
+                                        plot.title = element_text(hjust = 0.5, size = 14)
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        g4
+                        
+                        
+                        #Common legend
+                        
+                        #Legend function
+                        extract_legend <- function(my_ggp) {
+                                step1 <- ggplot_gtable(ggplot_build(my_ggp))
+                                step2 <- which(sapply(step1$grobs, function(x) x$name) == "guide-box")
+                                step3 <- step1$grobs[[step2]]
+                                return(step3)
+                        }
+                        
+                        g1_l <- ggplot(subset(albedo_means, Group == "Spruce" & Season == "Winter"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                                geom_errorbar(position = pd, aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE)), colour="#666666", width=0.7) +
+                                geom_line(position = pd, aes(linetype = Treatment), lwd = 0.5) +
+                                geom_point(position = pd, size = 1.4) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 12, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Mean Albedo") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                ggtitle("Winter") +
+                                theme(
+                                        legend.position = "top",
+                                        legend.background = element_rect(fill = "#fafafa", color = "#e6e6e6")
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        
+                        #Extract legend
+                        shared_legend <- extract_legend(g1_l)
+                        
+                        #Build complex plot
+                        middle_rows <- plot_grid(g1, NULL, g2, NULL, NULL, NULL, g3, NULL, g4, ncol = 3, nrow = 3, rel_widths = c(0.475,0.05,0.475), rel_heights = c(0.475,0.05, 0.475))
+                        final_plot <- plot_grid(shared_legend, middle_rows, ncol = 1, rel_heights = c(0.1,0.9) )
+                        
+                        #Save as SVG    
+                        ggsave('albedo_spruce_subplots_complex.svg',
+                               final_plot,
+                               "svg",
+                               '1_Albedo_Exclosures/1_Data_Processing/4_Albedo_Estimates/Output/Plots/Subplot_Resolution/Spruce',
+                               scale = 1.25)
+                        
+                        
+                        
+                #"STANDARD" FACETED PLOTS
+                        
+                        #ERROR BARS FOR SE
+                        ggplot(subset(albedo_means, Group == "Spruce"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                                geom_errorbar(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE)), colour="#666666", width=0.55, position = pd) +
+                                geom_line(position = pd, aes(color = Treatment), lwd = 0.5) +
+                                geom_point(position = pd, aes(shape = Treatment, color = Treatment), size = 1) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 6, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo (Spruce)") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                scale_y_continuous(limits = c(0.13, 0.425), breaks = c(0.15,0.2,0.25,0.3,0.35,0.4)) +
+                                theme(
+                                        legend.position = "bottom",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10))
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        
+                                #Export manually
+                        
+                        #SHADING FOR SE
+                        ggplot(subset(albedo_means, Group == "Spruce"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                                geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.3, lwd = 0) +
+                                geom_point(position = pd, aes(shape = Treatment, color = Treatment), size = 0.6) +
+                                theme_bw() +
+                                facet_wrap(~ Month, ncol = 6, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = "Albedo (Spruce)") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                scale_y_continuous(limits = c(0.13, 0.425), breaks = c(0.15,0.2,0.25,0.3,0.35,0.4)) +
+                                theme(
+                                        legend.position = "bottom",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10))
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F) +
+                                guides(fill = F)
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+        #EXPLORE/FACET BY REGION (AS A PROXY FOR MOOSE DENSITY) --------------  
+                        
+                #Calculate means within regions
+                        
+                        #Aggregate means for each region, group, month, and year since exclosure
+
+                        albedo_reg <- aggregate(final_albedo$Albedo, by = list("Treatment" = final_albedo$Treatment,
+                                                                               "Region" = final_albedo$Region,
+                                                                                 "Years_Since_Exclosure" = final_albedo$Years_Since_Exclosure,
+                                                                                 "Group" = final_albedo$Group,
+                                                                                 "Month" = final_albedo$Month), FUN = mean)
+                        
+                        colnames(albedo_reg)[6] <- "Mean_Subplot_Albedo"
+                        
+                        #Calculate standard error for each mean
+                        
+                                #Add placeholder columns
+                                albedo_reg$SE <- as.numeric('')
+                                
+                                #Calculate SEs for each species/group, month, and year
+                                for(i in 1:nrow(albedo_reg)){
+                                        
+                                        #Get variables
+                                        tr <- albedo_reg[i, "Treatment"]
+                                        reg <- albedo_reg[i, "Region"]
+                                        yse <- albedo_reg[i, "Years_Since_Exclosure"]
+                                        mt <- albedo_reg[i, "Month"]
+                                        gr <- albedo_reg[i, "Group"]
+                                        
+                                        #Calculate SE for albedo
+                                        se <- std(final_albedo$Albedo[final_albedo$Treatment == tr &
+                                                                              final_albedo$Region == reg &
+                                                                              final_albedo$Group == gr &
+                                                                              final_albedo$Years_Since_Exclosure == yse &
+                                                                              final_albedo$Month == mt])
+                                        
+                                        #Add to df
+                                        albedo_reg[i, "SE"] <- se
+                                        
+                                }
+                                
+                        #Add a 'season' variable for further grouping
+                        
+                        #Placeholder column
+                        albedo_reg$Season <- as.character('')
+                        
+                        #Conditions
+                        albedo_reg$Season[albedo_reg$Month %in% c(1:3)] <- "Winter"
+                        albedo_reg$Season[albedo_reg$Month %in% c(4:6)] <- "Spring"
+                        albedo_reg$Season[albedo_reg$Month %in% c(7:9)] <- "Summer"
+                        albedo_reg$Season[albedo_reg$Month %in% c(10:12)] <- "Autumn"
+                        
+                        #Set as factor
+                        albedo_reg$Region <- as.factor(albedo_reg$Region)
+                        albedo_reg$Season <- as.factor(albedo_reg$Season)
+                        
+                        
+        
+                #Winter months, faceted by region ------------
+                        
+                        ggplot(data = subset(albedo_reg, Group == "Composite" & Month %in% c(1:3)), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, group = Treatment)) +
+                                geom_errorbar(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE)), colour="#666666", width=0.55, position = pd) +
+                                geom_line(position = pd, aes(color = Treatment), lwd = 0.5) +
+                                geom_point(position = pd, aes(shape = Treatment, color = Treatment), size = 1) +
+                                theme_bw() +
+                                facet_grid(Region~Month, labeller = labeller(month_labs)) +
+                                labs(x = "Years Since Exclosure", y = "Albedo") +
+                                scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
+                                #scale_y_continuous(limits = c(0.13, 0.425), breaks = c(0.15,0.2,0.25,0.3,0.35,0.4)) +
+                                theme(
+                                        legend.position = "bottom",
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10))
+                                ) +
+                                guides(shape = F) +
+                                guides(linetype = F)
+                        
+                        
+                                        #WHY DOES HEDMARK BROWSED HAVE ALBEDO THAT IS MUCH LOWER??
+                                
+                        
+                        
+                        
+                #All months -------------
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                                
+#END PLOT ALBEDO AT SUBPLOT LEVEL ---------------------------------------------------------------------------------
+
+                        
+                        
+                        
+#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+                        
+                        
+                        
+                        
+#CALCULATE MEAN ALBEDO + SE AT PLOT LEVEL ---------------------------------------------------------------------------------
+                        
+        # NOTE: This section has five steps:
+                        
+                #(1) Calculate a 'mean albedo' value for each plot (i.e. LocalityCode) - for all groups (composite, pine
+                # deciduous, spruce) across all months and years of data.
+                        
+                #(2) At each study location (i.e. LocalityName), calculate DELTA ALBEDO between exclosure and open plots. 
+                        
+                #(3) Calculate mean values across all "years since exclosure" and months for DELTA ALBEDO (between excl./open plots)
+                        
+                #(4) Calculate standard error for each of these mean values
+                        
+                #(5) Plot mean values (also include plots of delta albedo vs herbivore densities)
+                        
+        # The figure resulting from this data should look similar to Figure 6 in Cherubini et al. (2017) - delta albedo on Y-axis,
+        # and years since exclosure on X-axis (faceted by month).
+                        
+        # The goal here is to produce a figure that allows us to nicely visualize the treatment effect of exclosure on albedo (since
+        # the other albedo plots don't show the treatment effect well - small difference between treatments but range of values makes
+        # plotting difficult). This will also allow us to visualize the individual species-specific albedos together with the composite albedos.
+                        
+        # Similar to the earlier steps, climate data is ONE SET OF VALUES (averages from climate data at all
+        # sites across the entire study period - 2009-2019)
+        
+                        
+        #STEP 1 -------------
+        
+                #CALCULATE AVERAGE ALBEDO PER SPECIES PER PLOT
+                plot_means <- aggregate(final_albedo$Albedo, by = list(final_albedo$LocalityName, final_albedo$LocalityCode, final_albedo$Treatment, final_albedo$Group, final_albedo$Years_Since_Exclosure, final_albedo$Month), FUN = mean)
+                colnames(plot_means) <- c("LocalityName", "LocalityCode", "Treatment", "Group", "Years_Since_Exclosure", "Month", "Avg_Plot_Albedo")               
                 
-                ggplot(subset(albedo_means, Group == "Pine"), aes(x = Year, y = Average_Albedo, color = Treatment, group = Treatment)) +
-                        geom_errorbar(aes(ymin = (Average_Albedo - SE), ymax = (Average_Albedo + SE)), colour="black", width=1, position = pd) +
-                        geom_line(lwd = 1.1, position = pd, aes(linetype = Treatment)) +
-                        geom_point(size = 3.5, position = pd, aes(shape = Treatment)) +
-                        theme_bw() +
-                        facet_wrap(~ Month, ncol = 6, labeller = month_labs) +
-                        labs(x = "Year", y = "Mean Pine Albedo") +
-                        scale_x_continuous(limits = c(2008, 2020), breaks = c(2010,2014,2018)) +
-                        scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
-                        theme(plot.title = element_text(hjust = 0.5, size = 50, margin = margin(t = 40, b = 40)),
-                              axis.text.x = element_text(size = 14, margin = margin(t=16)),
-                              axis.text.y = element_text(size = 22, margin = margin(r=16)),
-                              axis.title.x = element_text(size = 34, margin = margin(t=40, b = 40)),
-                              axis.title.y = element_text(size = 34, margin = margin(r=40)),
-                              strip.text.x = element_text(size = 22),
-                              legend.title = element_text(size = 26),
-                              legend.text = element_text(size = 23, margin = margin(t=10)),
-                              legend.position = "bottom") +
-                        guides(shape = F) +
-                        guides(linetype = F)
-                
-                dev.off()
-                
-                
-                #Spruce Means
-                png(filename = "1_Albedo_Exclosures/Approach_1B/Output/albedo_estimates/means/albedo_estimates_spruce.png",
-                    width = 1600,
-                    height = 1200,
-                    bg = "white")
-                
-                ggplot(subset(albedo_means, Group == "Spruce"), aes(x = Year, y = Average_Albedo, color = Treatment, group = Treatment)) +
-                        geom_errorbar(aes(ymin = (Average_Albedo - SE), ymax = (Average_Albedo + SE)), colour="black", width=1, position = pd) +
-                        geom_line(lwd = 1.1, position = pd, aes(linetype = Treatment)) +
-                        geom_point(size = 3.5, position = pd, aes(shape = Treatment)) +
-                        theme_bw() +
-                        facet_wrap(~ Month, ncol = 6, labeller = month_labs) +
-                        labs(x = "Year", y = "Mean Spruce Albedo") +
-                        scale_x_continuous(limits = c(2008, 2020), breaks = c(2010,2014,2018)) +
-                        scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
-                        theme(plot.title = element_text(hjust = 0.5, size = 50, margin = margin(t = 40, b = 40)),
-                              axis.text.x = element_text(size = 14, margin = margin(t=16)),
-                              axis.text.y = element_text(size = 22, margin = margin(r=16)),
-                              axis.title.x = element_text(size = 34, margin = margin(t=40, b = 40)),
-                              axis.title.y = element_text(size = 34, margin = margin(r=40)),
-                              strip.text.x = element_text(size = 22),
-                              legend.title = element_text(size = 26),
-                              legend.text = element_text(size = 23, margin = margin(t=10)),
-                              legend.position = "bottom") +
-                        guides(shape = F) +
-                        guides(linetype = F)
-                
-                dev.off()
-                
+                        
+                        
+                        
+                        
+#END CALCULATE MEAN ALBEDO + SE AT PLOT LEVEL ---------------------------------------------------------------------------------
+                        
 ##ALBEDO DIFFERENCES APPEAR TO BE QUITE SMALL - ALBEDO VS TIME isn't particularly interesting (lots of variation
 #due to climate). Confirms that I need to look at treatment difference in a given site - how do I compare multiple
 #subplots?
@@ -913,8 +1737,7 @@
                 
                 
                 
-#END DATA EXPLORATION -----------------------------------------------------------------------------
-                        
+
                         
                         
                         

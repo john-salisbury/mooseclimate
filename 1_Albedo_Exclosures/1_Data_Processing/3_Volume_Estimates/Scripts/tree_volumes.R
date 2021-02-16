@@ -338,9 +338,7 @@
                 #Main Volumes Dataset
                 write.csv(vol, "1_Albedo_Exclosures/1_Data_Processing/3_Volume_Estimates/Output/subplot_tree_volumes.csv")
                         
-                #Volume means + SE by treatment and species
-                write.csv(vol_means, "1_Albedo_Exclosures/1_Data_Processing/3_Volume_Estimates/Output/subplot_volumes_means_se.csv")
-                        
+
         
 
 #END EXPORT PLOTS ---------------------------------------------------------------------------------- 
