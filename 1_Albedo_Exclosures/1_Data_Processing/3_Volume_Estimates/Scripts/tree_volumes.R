@@ -219,6 +219,35 @@
                         }
                 
                         
+        #TOTAL MEAN SUBPLOT VOLUME BY REGION
+                        
+                #Aggregate means
+                tot_reg_means <- aggregate(vol$Volume_m3ha, by = list("Treatment" = vol$Treatment,
+                                                                  "Years_Since_Exclosure" = vol$Years_Since_Exclosure,
+                                                                  "Region" = vol$Region), FUN = mean)
+                colnames(tot_reg_means)[4] <- "Average_vol_m3_ha"
+                
+                #Calculate SE
+                
+                        #Add placeholder columns
+                        tot_reg_means$SE <- as.numeric('')
+                        
+                        for(i in 1:nrow(tot_reg_means)){
+                                
+                                #Get variables
+                                tr <- tot_reg_means[i, "Treatment"]
+                                yr <- tot_reg_means[i, "Years_Since_Exclosure"]
+                                re <- tot_reg_means[i, "Region"]
+                                
+                                #Calculate SE
+                                se <- std(vol$Volume_m3ha[vol$Treatment == tr &
+                                                                  vol$Years_Since_Exclosure == yr &
+                                                                  vol$Region == re])
+                                
+                                #Add to df
+                                tot_reg_means[i, "SE"] <- se
+                        }
+                
                         
         
         #MEAN SUBPLOT VOLUME BY GROUP AND REGION -----------------------
@@ -302,6 +331,22 @@
                                         axis.title.x = element_text(size = 12, margin = margin(t=10)),
                                         axis.title.y = element_text(size = 12, margin = margin(r=10))
                                 )
+                        
+                        
+                #MEAN SUBPLOT VOLUME BY REGION & TREATMENT -------
+                
+                ggplot(data = tot_reg_means, aes(x = Years_Since_Exclosure, y = Average_vol_m3_ha, group = Treatment)) +
+                        geom_errorbar(aes(ymin = (Average_vol_m3_ha - SE), ymax = (Average_vol_m3_ha + SE)), colour="black", width=0.5, position = position_dodge(0.3)) +
+                        geom_point(aes(shape = Treatment), size = 1.75, position = position_dodge(0.3)) +
+                        geom_line(aes(linetype = Treatment)) +
+                        facet_wrap(~Region, ncol = 1) +
+                        labs(x = "Years Since Exclosure", y = "Mean Subplot Volume "~(m^3/ha)) +
+                        scale_x_continuous(breaks = c(1,3,5,7,9,11)) +
+                        theme_bw() +
+                        theme(
+                                axis.title.x = element_text(size = 12, margin = margin(t=10)),
+                                axis.title.y = element_text(size = 12, margin = margin(r=10))
+                        )
                         
                         
                 #MEAN SUBPLOT VOLUME BY GROUP, REGION, & TREATMENT -------

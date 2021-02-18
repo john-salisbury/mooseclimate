@@ -291,8 +291,7 @@
                                 subplots <- levels(as.factor(albedo$Subplot[albedo$LocalityCode == used_sites[i] & albedo$Year == j]))
                                 
                                 for(k in 1:length(subplots)){
-                                        
-                                                            
+
                                         #Loop through each month
                                         for(l in 1:12){
                                                 
@@ -300,10 +299,10 @@
                                                 month <- l
                                                 
                                                 #SWE
-                                                swe <- albedo$SWE_mm[albedo$LocalityCode == used_sites[i] & albedo$Year == j & albedo$Month == l][1]
+                                                swe <- clim$SWE_mm[clim$Month == l]
                                                 
                                                 #Temp
-                                                temps <- albedo$Temp_K[albedo$LocalityCode == used_sites[i] & albedo$Year == j & albedo$Month == l][1]
+                                                temps <- clim$Temperature_K[clim$Month == l]
                                                 
                                                 #CALCULATE COMPOSITE ALBEDO (WEIGHTED AVG BASED ON SPECIES PROPORTIONS)
                                                 
@@ -418,7 +417,6 @@
         #START HERE IF ALBEDO ALREADY SAVED TO CSV ------------------
         final_albedo <- read.csv("1_Albedo_Exclosures/1_Data_Processing/4_Albedo_Estimates/Output/subplot_albedo_estimates.csv", header = T)
                 
-        
         #Aggregate means for each group, month, and year since exclosure
         #Note: not doing anything with 'year' variable, since we're using a single set of
         #average climate values
@@ -429,6 +427,8 @@
                                                                  "Month" = final_albedo$Month), FUN = mean)
         
         colnames(albedo_means)[5] <- "Mean_Subplot_Albedo"
+        
+                #VERIFIED THAT AGGREGATE PRODUCED CORRECT MEANS HERE
         
         #Calculate standard error for each mean
         
@@ -1246,15 +1246,13 @@
                         
                 #Calculate means within regions
                         
-                        #Aggregate means for each region, group, month, and year since exclosure
-
-                        albedo_reg <- aggregate(final_albedo$Albedo, by = list("Treatment" = final_albedo$Treatment,
-                                                                               "Region" = final_albedo$Region,
-                                                                                 "Years_Since_Exclosure" = final_albedo$Years_Since_Exclosure,
-                                                                                 "Group" = final_albedo$Group,
-                                                                                 "Month" = final_albedo$Month), FUN = mean)
+                        albedo_comp <- final_albedo[final_albedo$Group == "Composite",]
                         
-                        colnames(albedo_reg)[6] <- "Mean_Subplot_Albedo"
+                        albedo_reg <- aggregate(albedo_comp$Albedo, by = list("Treatment" = albedo_comp$Treatment,
+                                                                               "Region" = albedo_comp$Region,
+                                                                               "Years_Since_Exclosure" = albedo_comp$Years_Since_Exclosure,
+                                                                               "Month" = albedo_comp$Month), FUN = mean)
+                        colnames(albedo_reg)[5] <- "Mean_Subplot_Albedo"
                         
                         #Calculate standard error for each mean
                         
@@ -1269,7 +1267,7 @@
                                         reg <- albedo_reg[i, "Region"]
                                         yse <- albedo_reg[i, "Years_Since_Exclosure"]
                                         mt <- albedo_reg[i, "Month"]
-                                        gr <- albedo_reg[i, "Group"]
+                                        gr <- "Composite"
                                         
                                         #Calculate SE for albedo
                                         se <- std(final_albedo$Albedo[final_albedo$Treatment == tr &
@@ -1298,16 +1296,22 @@
                         albedo_reg$Region <- as.factor(albedo_reg$Region)
                         albedo_reg$Season <- as.factor(albedo_reg$Season)
                         
+                        #Set month "nice names"
+                        albedo_reg$Month_Name <- month.abb[albedo_reg$Month]
+                        
+                        
+                        
                         
         
                 #Winter months, faceted by region ------------
+                        pd = position_dodge(0.35)
                         
-                        ggplot(data = subset(albedo_reg, Group == "Composite" & Month %in% c(1:3)), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, group = Treatment)) +
-                                geom_errorbar(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE)), colour="#666666", width=0.55, position = pd) +
+                        ggplot(data = subset(albedo_reg, Month == 1), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, group = Treatment)) +
+                                geom_errorbar(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE)), colour="#666666", width=0.3, position = pd) +
                                 geom_line(position = pd, aes(color = Treatment), lwd = 0.5) +
                                 geom_point(position = pd, aes(shape = Treatment, color = Treatment), size = 1) +
                                 theme_bw() +
-                                facet_grid(Region~Month, labeller = labeller(month_labs)) +
+                                facet_wrap(~Region, ncol = 1) +
                                 labs(x = "Years Since Exclosure", y = "Albedo") +
                                 scale_x_continuous(breaks = c(2,4,6,8,10)) +
                                 scale_color_discrete(labels = c("Browsed", "Unbrowsed")) +
@@ -1315,23 +1319,19 @@
                                 theme(
                                         legend.position = "bottom",
                                         axis.title.x = element_text(margin = margin(t = 10)),
-                                        axis.title.y = element_text(margin = margin(r = 10))
+                                        axis.title.y = element_text(margin = margin(r = 10)),
+                                        plot.title = element_text(hjust = 0.5)
                                 ) +
                                 guides(shape = F) +
-                                guides(linetype = F)
+                                guides(linetype = F) +
+                                ggtitle("January Albedo")
                         
                         
-                                        #WHY DOES HEDMARK BROWSED HAVE ALBEDO THAT IS MUCH LOWER??
+                                        # NOTE: Hedmark has unexpected albedo in early years of succession
+                                        # I believe this is due to presence of large spruce in unbrowsed sites,
+                                        # as well as few sites early on (most available tree data for Hedmark sites
+                                        # starts 3 years after exclosure)
                                 
-                        
-                        
-                        
-                #All months -------------
-                        
-                        
-                        
-                        
-                        
                         
                         
                         
@@ -1346,9 +1346,9 @@
                         
                         
                         
-#CALCULATE MEAN ALBEDO + SE AT PLOT LEVEL ---------------------------------------------------------------------------------
+#CALCULATE DELTA MEAN ALBEDO + SE AT PLOT LEVEL ---------------------------------------------------------------------------------
                         
-        # NOTE: This section has five steps:
+        # NOTE: This section has seven steps:
                         
                 #(1) Calculate a 'mean albedo' value for each plot (i.e. LocalityCode) - for all groups (composite, pine
                 # deciduous, spruce) across all months and years of data.
@@ -1359,8 +1359,13 @@
                         
                 #(4) Calculate standard error for each of these mean values
                         
-                #(5) Plot mean values (also include plots of delta albedo vs herbivore densities)
+                #(5) Plot mean delta albedo values w/ SE
                         
+                #(6) Plot mean delta albedo values w/ SE by region
+                        
+                #(7) Plots of delta albedo vs herbivore densities at each LocalityCode
+                        
+
         # The figure resulting from this data should look similar to Figure 6 in Cherubini et al. (2017) - delta albedo on Y-axis,
         # and years since exclosure on X-axis (faceted by month).
                         
@@ -1375,42 +1380,49 @@
         #STEP 1 -------------
         
                 #CALCULATE AVERAGE ALBEDO PER SPECIES PER PLOT
-                plot_means <- aggregate(final_albedo$Albedo, by = list(final_albedo$LocalityName, final_albedo$LocalityCode, final_albedo$Treatment, final_albedo$Group, final_albedo$Years_Since_Exclosure, final_albedo$Month), FUN = mean)
-                colnames(plot_means) <- c("LocalityName", "LocalityCode", "Treatment", "Group", "Years_Since_Exclosure", "Month", "Avg_Plot_Albedo")               
-                
-                        
-                        
-                        
-                        
-#END CALCULATE MEAN ALBEDO + SE AT PLOT LEVEL ---------------------------------------------------------------------------------
-                        
-##ALBEDO DIFFERENCES APPEAR TO BE QUITE SMALL - ALBEDO VS TIME isn't particularly interesting (lots of variation
-#due to climate). Confirms that I need to look at treatment difference in a given site - how do I compare multiple
-#subplots?
+                plot_means <- aggregate(final_albedo$Albedo, by = list("LocalityName" = final_albedo$LocalityName,
+                                                                       "LocalityCode" = final_albedo$LocalityCode,
+                                                                       "Treatment" = final_albedo$Treatment,
+                                                                       "Group" = final_albedo$Group,
+                                                                       "Years_Since_Exclosure" = final_albedo$Years_Since_Exclosure,
+                                                                       "Month" = final_albedo$Month), FUN = mean)
+                colnames(plot_means)[7] <- "Avg_Plot_Albedo"               
                 
                 
-        #CALCULATE AVERAGE ALBEDO PER SPECIES PER PLOT
-        plot_means <- aggregate(final_albedo$Albedo, by = list(final_albedo$LocalityName, final_albedo$LocalityCode, final_albedo$Treatment, final_albedo$Group, final_albedo$Years_Since_Exclosure, final_albedo$Month), FUN = mean)
-        colnames(plot_means) <- c("LocalityName", "LocalityCode", "Treatment", "Group", "Years_Since_Exclosure", "Month", "Avg_Plot_Albedo")
-        
-        #Calculate difference between average plot albedos for each species
-        
-                #Aggregate with sum function (i.e. calculate difference between open and exclosure for each LocalityName)
-                plot_diff <- aggregate(plot_means$Avg_Plot_Albedo, by = list(plot_means$LocalityName, plot_means$Group, plot_means$Years_Since_Exclosure, plot_means$Month), FUN = diff)
-                colnames(plot_diff) <- c("LocalityName", "Group", "Years_Since_Exclosure", "Month", "Mean_Albedo_Diff")
+                
+                
+        #STEP 2 -------------
+                
+                #CALCULATE DELTA ALBEDO AT EACH SITE
+                #At each study site, calculate difference in mean plot albedo between exclosure and open plot
+                plot_diff <- aggregate(plot_means$Avg_Plot_Albedo, by = list("LocalityName" = plot_means$LocalityName,
+                                                                             "Group" = plot_means$Group,
+                                                                             "Years_Since_Exclosure" = plot_means$Years_Since_Exclosure,
+                                                                             "Month" = plot_means$Month), FUN = diff)
+                colnames(plot_diff)[5] <- "Mean_Albedo_Diff"
                 
                 #Fix numeric(0) list error
                 plot_diff$Mean_Albedo_Diff <- as.numeric(plot_diff$Mean_Albedo_Diff)
                 
-        #CALCULATE MEANS + SE OF MEAN ALBEDO DIFFERENCES
                 
-                #Remove NA values to allow aggregation
-                plot_diff <- plot_diff[!is.na(plot_diff$Mean_Albedo_Diff),]
+        
+        #STEP 3 ------------
                 
-                #Aggregate means
-                diff_means <- aggregate(plot_diff$Mean_Albedo_Diff, by = list(plot_diff$Group, plot_diff$Years_Since_Exclosure, plot_diff$Month), FUN = mean)
-                colnames(diff_means) <- c("Group", "Years_Since_Exclosure", "Month", "Mean_Albedo_Diff")
-                
+                #CALCULATE MEAN DELTA ALBEDO
+                        
+                        #Remove NA values to allow aggregation
+                        plot_diff <- plot_diff[!is.na(plot_diff$Mean_Albedo_Diff),]
+                        
+                        #Aggregate means
+                        diff_means <- aggregate(plot_diff$Mean_Albedo_Diff, by = list("Group" = plot_diff$Group,
+                                                                                      "Years_Since_Exclosure" = plot_diff$Years_Since_Exclosure,
+                                                                                      "Month" = plot_diff$Month), FUN = mean)
+                        
+                        colnames(diff_means)[4] <- "Mean_Albedo_Diff"
+                        
+                        
+        #STEP 4 ------------
+                        
                 #Add placeholder columns
                 diff_means$SE <- as.numeric('')
                 
@@ -1421,127 +1433,53 @@
                         for(j in 1:12){
                                 
                                 #Birch mean albedo diff SE
-                                                         
-                                        diff_means$SE[diff_means$Group == "Birch" & diff_means$Years_Since_Exclosure == i & diff_means$Month == j] <- std(plot_diff$Mean_Albedo_Diff[plot_diff$Years_Since_Exclosure == i & plot_diff$Group == "Birch" & plot_diff$Month == j])
-                                        
+                                
+                                diff_means$SE[diff_means$Group == "Birch" & diff_means$Years_Since_Exclosure == i & diff_means$Month == j] <- std(plot_diff$Mean_Albedo_Diff[plot_diff$Years_Since_Exclosure == i & plot_diff$Group == "Birch" & plot_diff$Month == j])
+                                
                                 
                                 #Spruce mean albedo diff SE
                                 
-                                        diff_means$SE[diff_means$Group == "Spruce" & diff_means$Years_Since_Exclosure == i & diff_means$Month == j] <- std(plot_diff$Mean_Albedo_Diff[plot_diff$Years_Since_Exclosure == i & plot_diff$Group == "Spruce" & plot_diff$Month == j])
-                                        
+                                diff_means$SE[diff_means$Group == "Spruce" & diff_means$Years_Since_Exclosure == i & diff_means$Month == j] <- std(plot_diff$Mean_Albedo_Diff[plot_diff$Years_Since_Exclosure == i & plot_diff$Group == "Spruce" & plot_diff$Month == j])
+                                
                                 
                                 #Pine mean albedo diff SE
                                 
-                                        diff_means$SE[diff_means$Group == "Pine" & diff_means$Years_Since_Exclosure == i & diff_means$Month == j] <- std(plot_diff$Mean_Albedo_Diff[plot_diff$Years_Since_Exclosure == i & plot_diff$Group == "Pine" & plot_diff$Month == j])
+                                diff_means$SE[diff_means$Group == "Pine" & diff_means$Years_Since_Exclosure == i & diff_means$Month == j] <- std(plot_diff$Mean_Albedo_Diff[plot_diff$Years_Since_Exclosure == i & plot_diff$Group == "Pine" & plot_diff$Month == j])
                                 
-                                        
+                                
                                 #Composite mean albedo diff SE
-                                        
-                                        diff_means$SE[diff_means$Group == "Composite" & diff_means$Years_Since_Exclosure == i & diff_means$Month == j] <- std(plot_diff$Mean_Albedo_Diff[plot_diff$Years_Since_Exclosure == i & plot_diff$Group == "Composite" & plot_diff$Month == j])
-                                        
-                                        
+                                
+                                diff_means$SE[diff_means$Group == "Composite" & diff_means$Years_Since_Exclosure == i & diff_means$Month == j] <- std(plot_diff$Mean_Albedo_Diff[plot_diff$Years_Since_Exclosure == i & plot_diff$Group == "Composite" & plot_diff$Month == j])
+                                
                         }
                         
                 }
-                
-                
-
-#PLOTS START HERE -------------------------------------------
-                
-        
-        #WITH COMPOSITE ALBEDO -------------------------
-                
-                #Version A
-                png(filename = "1_Albedo_Exclosures/Approach_1B/Output/albedo_estimates/means/mean_albedo_differences_comp_a.png",
-                    width = 2200,
-                    height = 1200,
-                    bg = "white")
-                
-                ggplot(subset(diff_means, Group %in% c("Spruce", "Pine", "Birch")), aes(x = Years_Since_Exclosure, y = Mean_Albedo_Diff, color = Group, group = Group)) +
-                        geom_hline(lwd = 1, color = "#e6e6e6", yintercept = 0) +
-                        geom_errorbar(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), colour="black", width=0.7, position = pd, alpha = 0.4) +
-                        geom_line(lwd = 1.2, position = pd, aes(linetype = Group), alpha = 0.4) +
-                        geom_point(size = 2.2, position = pd, aes(shape = Group), alpha = 0.4) +
-                        theme_bw() +
-                        facet_wrap(~ Month, ncol = 6, labeller = month_labs) +
-                        labs(x = "Years Since Exclosure", y = "Mean Albedo Difference (Excl. - Open)", color = "Tree Species:") +
-                        scale_x_continuous(limits = c(0,12), breaks = c(1,3,5,7,9,11)) +
-                        scale_y_continuous(limits = c(-0.018, 0.012), breaks = c(-0.01, 0.00, 0.01)) +
-                        scale_color_discrete(labels = c("Deciduous", "Pine", "Spruce")) +
-                        geom_point(data = subset(diff_means, Group == "Composite"), size = 2.2, position = pd, color = "#333333") +
-                        geom_line(data = subset(diff_means, Group == "Composite"), aes(x = Years_Since_Exclosure, y = Mean_Albedo_Diff), color = "#333333", linetype = 1, size = 1.3) +
-                        theme(plot.title = element_text(hjust = 0.5, size = 50, margin = margin(t = 40, b = 40)),
-                              axis.text.x = element_text(size = 20, margin = margin(t=16)),
-                              axis.text.y = element_text(size = 22, margin = margin(r=16)),
-                              axis.title.x = element_text(size = 34, margin = margin(t=40, b = 24)),
-                              axis.title.y = element_text(size = 34, margin = margin(r=40)),
-                              strip.text.x = element_text(size = 22),
-                              legend.title = element_text(size = 28),
-                              legend.text = element_text(size = 26, margin = margin(t=10)),
-                              legend.position = "bottom") +
-                        guides(shape = F) +
-                        guides(linetype = F) +
-                        guides(color = guide_legend(override.aes = list(size = 5) ) )
-                
-                dev.off()
-                
-                
-                #Version B
-                png(filename = "1_Albedo_Exclosures/Approach_1B/Output/albedo_estimates/means/mean_albedo_differences_comp_b.png",
-                    width = 2200,
-                    height = 1200,
-                    bg = "white")
-                
-                ggplot(subset(diff_means, Group %in% c("Spruce", "Pine", "Birch")), aes(x = Years_Since_Exclosure, y = Mean_Albedo_Diff, color = Group, group = Group)) +
-                        geom_hline(lwd = 1, color = "#e6e6e6", yintercept = 0) +
-                        #geom_errorbar(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), colour="black", width=0.7, position = pd, alpha = 0.4) +
-                        geom_line(lwd = 1.2, position = pd, aes(linetype = Group), alpha = 0.4) +
-                        geom_point(size = 2.2, position = pd, aes(shape = Group), alpha = 0.4) +
-                        theme_bw() +
-                        facet_wrap(~ Month, ncol = 6, labeller = month_labs) +
-                        labs(x = "Years Since Exclosure", y = "Mean Albedo Difference (Excl. - Open)", color = "Tree Species:") +
-                        scale_x_continuous(limits = c(0,12), breaks = c(1,3,5,7,9,11)) +
-                        scale_y_continuous(limits = c(-0.018, 0.012), breaks = c(-0.01, 0.00, 0.01)) +
-                        scale_color_discrete(labels = c("Deciduous", "Pine", "Spruce")) +
-                        geom_errorbar(data = subset(diff_means, Group == "Composite"), aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), colour="black", width=0.7, position = pd, alpha = 1) +
-                        geom_point(data = subset(diff_means, Group == "Composite"), size = 2.2, position = pd, color = "#333333") +
-                        geom_line(data = subset(diff_means, Group == "Composite"), aes(x = Years_Since_Exclosure, y = Mean_Albedo_Diff), color = "#333333", linetype = 1, size = 1.3) +
-                        theme(plot.title = element_text(hjust = 0.5, size = 50, margin = margin(t = 40, b = 40)),
-                              axis.text.x = element_text(size = 20, margin = margin(t=16)),
-                              axis.text.y = element_text(size = 22, margin = margin(r=16)),
-                              axis.title.x = element_text(size = 34, margin = margin(t=40, b = 24)),
-                              axis.title.y = element_text(size = 34, margin = margin(r=40)),
-                              strip.text.x = element_text(size = 22),
-                              legend.title = element_text(size = 28),
-                              legend.text = element_text(size = 26, margin = margin(t=10)),
-                              legend.position = "bottom") +
-                        guides(shape = F) +
-                        guides(linetype = F) +
-                        guides(color = guide_legend(override.aes = list(size = 5) ) )
-                
-                dev.off()
-                
-        #WITHOUT COMPOSITE ALBEDO -------------------------   
-                
-                #Plot Means + SE
-                
-                        #All Species Together
-                        png(filename = "1_Albedo_Exclosures/Approach_1B/Output/albedo_estimates/means/mean_albedo_differences.png",
+                        
+                        
+        #STEP 5 -----------------------
+                        
+                #GENERATE PLOTS OF DELTA MEAN ALBEDO W/ SE FOR COMPOSITE VERSION
+                        
+                        #Wide plot
+                        png(filename = "1_Albedo_Exclosures/1_Data_Processing/4_Albedo_Estimates/Output/Plots/Delta_Albedo/mean_albedo_differences_comp_wide.png",
                             width = 2200,
                             height = 1200,
                             bg = "white")
                         
                         ggplot(subset(diff_means, Group %in% c("Spruce", "Pine", "Birch")), aes(x = Years_Since_Exclosure, y = Mean_Albedo_Diff, color = Group, group = Group)) +
                                 geom_hline(lwd = 1, color = "#e6e6e6", yintercept = 0) +
-                                geom_errorbar(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), colour="black", width=0.7, position = pd) +
-                                geom_line(lwd = 1.2, position = pd, aes(linetype = Group)) +
-                                geom_point(size = 2, position = pd, aes(shape = Group)) +
+                                #geom_errorbar(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), colour="black", width=0.7, position = pd, alpha = 0.4) +
+                                geom_line(lwd = 1.2, position = pd, aes(linetype = Group), alpha = 0.4) +
+                                geom_point(size = 2.2, position = pd, aes(shape = Group), alpha = 0.4) +
                                 theme_bw() +
                                 facet_wrap(~ Month, ncol = 6, labeller = month_labs) +
-                                labs(x = "Years Since Exclosure", y = "Mean Albedo Difference (Excl. - Open)", color = "Tree Species:") +
+                                labs(x = "Years Since Exclosure", y = expression(Delta*' Albedo (Excl. - Open)'), color = "Tree Species:") +
                                 scale_x_continuous(limits = c(0,12), breaks = c(1,3,5,7,9,11)) +
                                 scale_y_continuous(limits = c(-0.018, 0.012), breaks = c(-0.01, 0.00, 0.01)) +
                                 scale_color_discrete(labels = c("Deciduous", "Pine", "Spruce")) +
+                                geom_errorbar(data = subset(diff_means, Group == "Composite"), aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), colour="black", width=0.7, position = pd, alpha = 1) +
+                                geom_point(data = subset(diff_means, Group == "Composite"), size = 2.2, position = pd, color = "#333333") +
+                                geom_line(data = subset(diff_means, Group == "Composite"), aes(x = Years_Since_Exclosure, y = Mean_Albedo_Diff), color = "#333333", linetype = 1, size = 1.3) +
                                 theme(plot.title = element_text(hjust = 0.5, size = 50, margin = margin(t = 40, b = 40)),
                                       axis.text.x = element_text(size = 20, margin = margin(t=16)),
                                       axis.text.y = element_text(size = 22, margin = margin(r=16)),
@@ -1557,26 +1495,27 @@
                         
                         dev.off()
                         
-        #COMPOSITE ALBEDO ONLY -------------------------   
                         
-                #Plot Means + SE
-                        
-                        #All Species Together
-                        png(filename = "1_Albedo_Exclosures/Approach_1B/Output/albedo_estimates/means/mean_albedo_differences_comp_only.png",
-                            width = 2200,
-                            height = 1200,
+                        #Tall plot
+                        png(filename = "1_Albedo_Exclosures/1_Data_Processing/4_Albedo_Estimates/Output/Plots/Delta_Albedo/mean_albedo_differences_comp_tall.png",
+                            width = 1800,
+                            height = 1800,
                             bg = "white")
                         
-                        ggplot(subset(diff_means, Group == "Composite"), aes(x = Years_Since_Exclosure, y = Mean_Albedo_Diff)) +
+                        ggplot(subset(diff_means, Group %in% c("Spruce", "Pine", "Birch")), aes(x = Years_Since_Exclosure, y = Mean_Albedo_Diff, color = Group, group = Group)) +
                                 geom_hline(lwd = 1, color = "#e6e6e6", yintercept = 0) +
-                                geom_errorbar(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), colour="black", width=0.7, position = pd) +
-                                geom_line(lwd = 1.2, position = pd, linetype = 2, color = "#666666") +
-                                geom_point(size = 2, position = pd) +
+                                #geom_errorbar(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), colour="black", width=0.7, position = pd, alpha = 0.4) +
+                                geom_line(lwd = 1.2, position = pd, aes(linetype = Group), alpha = 0.4) +
+                                geom_point(size = 2.2, position = pd, aes(shape = Group), alpha = 0.4) +
                                 theme_bw() +
-                                facet_wrap(~ Month, ncol = 6, labeller = month_labs) +
-                                labs(x = "Years Since Exclosure", y = "Mean Albedo Difference (Excl. - Open)") +
+                                facet_wrap(~ Month, ncol = 4, labeller = month_labs) +
+                                labs(x = "Years Since Exclosure", y = expression(Delta*' Albedo (Excl. - Open)'), color = "Tree Species:") +
                                 scale_x_continuous(limits = c(0,12), breaks = c(1,3,5,7,9,11)) +
                                 scale_y_continuous(limits = c(-0.018, 0.012), breaks = c(-0.01, 0.00, 0.01)) +
+                                scale_color_discrete(labels = c("Deciduous", "Pine", "Spruce")) +
+                                geom_errorbar(data = subset(diff_means, Group == "Composite"), aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), colour="black", width=0.7, position = pd, alpha = 1) +
+                                geom_point(data = subset(diff_means, Group == "Composite"), size = 2.2, position = pd, color = "#333333") +
+                                geom_line(data = subset(diff_means, Group == "Composite"), aes(x = Years_Since_Exclosure, y = Mean_Albedo_Diff), color = "#333333", linetype = 1, size = 1.3) +
                                 theme(plot.title = element_text(hjust = 0.5, size = 50, margin = margin(t = 40, b = 40)),
                                       axis.text.x = element_text(size = 20, margin = margin(t=16)),
                                       axis.text.y = element_text(size = 22, margin = margin(r=16)),
@@ -1591,140 +1530,135 @@
                                 guides(color = guide_legend(override.aes = list(size = 5) ) )
                         
                         dev.off()
-
-#RESULTS SEEM SIMILAR TO OTHER APPROACH 1A, BUT MORE VARIATION
                         
-        #TRY PLOTTING MOVING MEANS ACROSS YSE FOR EACH SPECIES (JUST TO VISUALIZE CURVES)
                         
-                #Create placeholder/copy df
-                rolling <- diff_means
-                
-                #Add rolling means column
-                rolling$Rolling_Mean_Albedo_Diff <- as.numeric('')
-                
-                
-                #Loop through each month
-                for(i in 1:12){
+        
                         
-                        #Loop through each group
-                        spec <- c("Birch", "Pine", "Spruce", "Composite")
+        #STEP 6 ------------------------
                         
-                        for(j in 1:length(spec)){
-                                
-                                #Get frame of albedo diff values to calculate rolling means from (month i and species j)
-                                frame <- diff_means$Mean_Albedo_Diff[diff_means$Group == spec[j] & diff_means$Month == i]
-                                roll <- rollapplyr(frame, 3, mean, partial = TRUE)
-                                
-                                #Add frame of rolling means to "rolling" df
-                                for(k in 1:length(roll)){
-                                        rolling$Rolling_Mean_Albedo_Diff[rolling$Group == spec[j] & rolling$Month == i & rolling$Years_Since_Exclosure == k] <- roll[k]
-                                }
-                                
+                #Get df of delta mean albedo values w/ region
+                        
+                        #Copy plot_diff df
+                        reg_diff <- plot_diff
+                        
+                        #Remove NA values to allow aggregation
+                        reg_diff <- reg_diff[!is.na(reg_diff$Mean_Albedo_Diff),]
+                        
+                        #Placeholder column
+                        reg_diff$Region <- as.character('')
+                        
+                        #Add region data from site_data 
+                        for(i in 1:nrow(reg_diff)){
+                                loc <- reg_diff[i, "LocalityName"]
+                                site_code <- site_data$LocalityCode[site_data$LocalityName == loc][1]
+                                reg_diff[i, "Region"] <- plot_volumes$Region[plot_volumes$LocalityCode == site_code][1]
                         }
-                          
-                }
+                        
+                #Calculate means by region
+                        
+                        #Aggregate means
+                        reg_diff_means <- aggregate(reg_diff$Mean_Albedo_Diff, by = list("Group" = reg_diff$Group,
+                                                                                         "Region" = reg_diff$Region,
+                                                                                      "Years_Since_Exclosure" = reg_diff$Years_Since_Exclosure,
+                                                                                      "Month" = reg_diff$Month), FUN = mean)
+                        
+                        colnames(reg_diff_means)[5] <- "Mean_Albedo_Diff"
+                        
+                #Calculate SE
+                        
+                        #Add placeholder columns
+                        reg_diff_means$SE <- as.numeric('')
+                        
+                        for(i in 1:nrow(reg_diff_means)){
+                                
+                                #Get variables for row i
+                                gr <- reg_diff_means[i, "Group"]
+                                re <- reg_diff_means[i, "Region"]
+                                yse <- reg_diff_means[i, "Years_Since_Exclosure"]
+                                mt <- reg_diff_means[i, "Month"]
+                                
+                                #Calculate SE
+                                se <- std(reg_diff$Mean_Albedo_Diff[reg_diff$Group == gr &
+                                                                            reg_diff$Region == re &
+                                                                            reg_diff$Years_Since_Exclosure == yse &
+                                                                            reg_diff$Month == mt])
+                                
+                                #Add to df
+                                reg_diff_means[i, "SE"] <- se
+                        }
+                        
                 
-                
-        #Plot rolling means
-                
-                #WITH COMPOSITE
-                
-                        #All Species Together
-                        png(filename = "1_Albedo_Exclosures/Approach_1B/Output/albedo_estimates/means/rolling_mean_albedo_differences_comp.png",
-                            width = 2200,
-                            height = 1200,
+                        
+                #Generate plots by region
+                        
+                        #Formatting for plot labels
+                        reg_diff_means$Region <- as.factor(reg_diff_means$Region)
+                        reg_diff_means$Month_Name <- month.abb[reg_diff_means$Month]
+                        
+                        #Plot w/ species-specific lines
+                        png(filename = "1_Albedo_Exclosures/1_Data_Processing/4_Albedo_Estimates/Output/Plots/Delta_Albedo/By_Region/mean_albedo_differences_winter_all.png",
+                            width = 1800,
+                            height = 1600,
                             bg = "white")
                         
-                        ggplot(subset(rolling, Group %in% c("Birch", "Spruce", "Pine")), aes(x = Years_Since_Exclosure, y = Rolling_Mean_Albedo_Diff, color = Group)) +
+                        ggplot(subset(reg_diff_means, Group %in% c("Spruce", "Pine", "Birch") & Month %in% c(1:3)), aes(x = Years_Since_Exclosure, y = Mean_Albedo_Diff, color = Group, group = Group)) +
                                 geom_hline(lwd = 1, color = "#e6e6e6", yintercept = 0) +
-                                geom_line(lwd = 1.2, position = pd) +
-                                geom_point(size = 2, position = pd) +
+                                #geom_errorbar(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), colour="black", width=0.7, position = pd, alpha = 0.4) +
+                                geom_line(lwd = 1.2, position = pd, aes(linetype = Group), alpha = 0.4) +
+                                geom_point(size = 2.2, position = pd, aes(shape = Group), alpha = 0.4) +
                                 theme_bw() +
-                                facet_wrap(~ Month, ncol = 6, labeller = month_labs) +
-                                labs(x = "Years Since Exclosure", y = "Rolling Mean Albedo Difference (Excl. - Open)", color = "Tree Species:") +
+                                facet_grid(Region~Month_Name) +
+                                labs(x = "Years Since Exclosure", y = expression(Delta*' Albedo (Excl. - Open)'), color = "Tree Species:") +
                                 scale_x_continuous(limits = c(0,12), breaks = c(1,3,5,7,9,11)) +
-                                scale_y_continuous(limits = c(-0.018, 0.012), breaks = c(-0.01, 0.00, 0.01)) +
+                                #scale_y_continuous(limits = c(-0.018, 0.012), breaks = c(-0.01, 0.00, 0.01)) +
                                 scale_color_discrete(labels = c("Deciduous", "Pine", "Spruce")) +
-                                geom_line(data = subset(rolling, Group == "Composite"), aes(x = Years_Since_Exclosure, y = Rolling_Mean_Albedo_Diff), color = "#666666", linetype = 4, size = 1) +
+                                geom_errorbar(data = subset(reg_diff_means, Group == "Composite" & Month %in% c(1:3)), aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), colour="black", width=0.7, position = pd, alpha = 1) +
+                                geom_point(data = subset(reg_diff_means, Group == "Composite" & Month %in% c(1:3)), size = 2.2, position = pd, color = "#333333") +
+                                geom_line(data = subset(reg_diff_means, Group == "Composite" & Month %in% c(1:3)), aes(x = Years_Since_Exclosure, y = Mean_Albedo_Diff), color = "#333333", linetype = 1, size = 1.3) +
                                 theme(plot.title = element_text(hjust = 0.5, size = 50, margin = margin(t = 40, b = 40)),
                                       axis.text.x = element_text(size = 20, margin = margin(t=16)),
                                       axis.text.y = element_text(size = 22, margin = margin(r=16)),
                                       axis.title.x = element_text(size = 34, margin = margin(t=40, b = 24)),
                                       axis.title.y = element_text(size = 34, margin = margin(r=40)),
                                       strip.text.x = element_text(size = 22),
+                                      strip.text.y = element_text(size = 22),
                                       legend.title = element_text(size = 28),
                                       legend.text = element_text(size = 26, margin = margin(t=10)),
                                       legend.position = "bottom") +
                                 guides(shape = F) +
                                 guides(linetype = F) +
-                                guides(group = F) +
                                 guides(color = guide_legend(override.aes = list(size = 5) ) )
                         
                         dev.off()
                         
-                
-                
-                #WITHOUT COMPOSITE
-                
-                        #All Species Together
-                        png(filename = "1_Albedo_Exclosures/Approach_1B/Output/albedo_estimates/means/rolling_mean_albedo_differences.png",
-                            width = 2200,
-                            height = 1200,
+                        
+                        #Plot w/ composite only
+                        png(filename = "1_Albedo_Exclosures/1_Data_Processing/4_Albedo_Estimates/Output/Plots/Delta_Albedo/By_Region/mean_albedo_differences_winter_comp.png",
+                            width = 1800,
+                            height = 1600,
                             bg = "white")
                         
-                        ggplot(subset(rolling, Group %in% c("Birch", "Spruce", "Pine")), aes(x = Years_Since_Exclosure, y = Rolling_Mean_Albedo_Diff, color = Group)) +
+                        ggplot(subset(reg_diff_means, Group %in% c("Spruce", "Pine", "Birch") & Month %in% c(1:3)), aes(x = Years_Since_Exclosure, y = Mean_Albedo_Diff, color = Group, group = Group)) +
                                 geom_hline(lwd = 1, color = "#e6e6e6", yintercept = 0) +
-                                geom_line(lwd = 1.2, position = pd, aes(linetype = Group)) +
-                                geom_point(size = 2, position = pd, aes(shape = Group)) +
+                                #geom_errorbar(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), colour="black", width=0.7, position = pd, alpha = 0.4) +
+                                #geom_line(lwd = 1.2, position = pd, aes(linetype = Group), alpha = 0.4) +
+                                #geom_point(size = 2.2, position = pd, aes(shape = Group), alpha = 0.4) +
                                 theme_bw() +
-                                facet_wrap(~ Month, ncol = 6, labeller = month_labs) +
-                                labs(x = "Years Since Exclosure", y = "Rolling Mean Albedo Difference (Excl. - Open)", color = "Tree Species:") +
+                                facet_grid(Region~Month_Name) +
+                                labs(x = "Years Since Exclosure", y = expression(Delta*' Albedo (Excl. - Open)'), color = "Tree Species:") +
                                 scale_x_continuous(limits = c(0,12), breaks = c(1,3,5,7,9,11)) +
-                                scale_y_continuous(limits = c(-0.018, 0.012), breaks = c(-0.01, 0.00, 0.01)) +
+                                #scale_y_continuous(limits = c(-0.018, 0.012), breaks = c(-0.01, 0.00, 0.01)) +
                                 scale_color_discrete(labels = c("Deciduous", "Pine", "Spruce")) +
+                                geom_errorbar(data = subset(reg_diff_means, Group == "Composite" & Month %in% c(1:3)), aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), colour="black", width=0.7, position = pd, alpha = 1) +
+                                geom_point(data = subset(reg_diff_means, Group == "Composite" & Month %in% c(1:3)), size = 2.2, position = pd, color = "#333333") +
+                                geom_line(data = subset(reg_diff_means, Group == "Composite" & Month %in% c(1:3)), aes(x = Years_Since_Exclosure, y = Mean_Albedo_Diff), color = "#333333", linetype = 1, size = 1.3) +
                                 theme(plot.title = element_text(hjust = 0.5, size = 50, margin = margin(t = 40, b = 40)),
                                       axis.text.x = element_text(size = 20, margin = margin(t=16)),
                                       axis.text.y = element_text(size = 22, margin = margin(r=16)),
                                       axis.title.x = element_text(size = 34, margin = margin(t=40, b = 24)),
                                       axis.title.y = element_text(size = 34, margin = margin(r=40)),
                                       strip.text.x = element_text(size = 22),
-                                      legend.title = element_text(size = 28),
-                                      legend.text = element_text(size = 26, margin = margin(t=10)),
-                                      legend.position = "bottom") +
-                                guides(shape = F) +
-                                guides(linetype = F) +
-                                guides(group = F) +
-                                guides(color = guide_legend(override.aes = list(size = 5) ) )
-                        
-                        dev.off()
-        
-                        
-                        
-        #COMPOSITE ALBEDO ONLY -------------------------   
-                        
-                #Plot Means + SE
-                        
-                        #All Species Together
-                        png(filename = "1_Albedo_Exclosures/Approach_1B/Output/albedo_estimates/means/rolling_mean_albedo_differences_comp_only.png",
-                            width = 2200,
-                            height = 1200,
-                            bg = "white")
-                        
-                        ggplot(subset(rolling, Group == "Composite"), aes(x = Years_Since_Exclosure, y = Rolling_Mean_Albedo_Diff)) +
-                                geom_hline(lwd = 1, color = "#e6e6e6", yintercept = 0) +
-                                geom_line(lwd = 1.2, position = pd, linetype = 2, color = "#666666") +
-                                geom_point(size = 2, position = pd) +
-                                theme_bw() +
-                                facet_wrap(~ Month, ncol = 6, labeller = month_labs) +
-                                labs(x = "Years Since Exclosure", y = "Rolling Mean Albedo Difference (Excl. - Open)") +
-                                scale_x_continuous(limits = c(0,12), breaks = c(1,3,5,7,9,11)) +
-                                scale_y_continuous(limits = c(-0.018, 0.012), breaks = c(-0.01, 0.00, 0.01)) +
-                                theme(plot.title = element_text(hjust = 0.5, size = 50, margin = margin(t = 40, b = 40)),
-                                      axis.text.x = element_text(size = 20, margin = margin(t=16)),
-                                      axis.text.y = element_text(size = 22, margin = margin(r=16)),
-                                      axis.title.x = element_text(size = 34, margin = margin(t=40, b = 24)),
-                                      axis.title.y = element_text(size = 34, margin = margin(r=40)),
-                                      strip.text.x = element_text(size = 22),
+                                      strip.text.y = element_text(size = 22),
                                       legend.title = element_text(size = 28),
                                       legend.text = element_text(size = 26, margin = margin(t=10)),
                                       legend.position = "bottom") +
@@ -1733,65 +1667,86 @@
                                 guides(color = guide_legend(override.aes = list(size = 5) ) )
                         
                         dev.off()
-                        
-                
-                
-                
+                       
 
                         
                         
-                        
-#MODEL ---------------------------------------------------------------------------------
-                        
-                        
-        #HYPOTHESES TO TEST:
-                
-                #Overall albedo will be significantly lower in exclosures during winter months (due to greater stand volume)
-                        
-                #In particular, birch albedo will be significantly lower in exclosures during winter months
-                #Spruce albedo and pine albedo will not be significantly lower 
-                        
-        #Histogram of albedo (response variable)
-        hist(final_albedo$Albedo)
-                        
-                #Very skewed - maybe a GLME would make sense? Need to account for random effects
-                        
-        #Correlation matrix?
-                        
-        #Try a LMM --------
-                        
-                #Treat "Treatment", "Group/Species", "Years Since Exclosure", and "Month" as factors
-                final_albedo$Month <- as.factor(final_albedo$Month)
-                final_albedo$Treatment <- as.factor(final_albedo$Treatment)
-                final_albedo$Group <- as.factor(final_albedo$Group)
-                final_albedo$Years_Since_Exclosure <- as.factor(final_albedo$Years_Since_Exclosure)
-                
-                #Specify complicated model w/ random effects
-                model <- lmer(Albedo ~ Treatment +
-                                      Group +
-                                      Month +
-                                      Years_Since_Exclosure + 
-                                      Treatment*Group +
-                                      Treatment*Month +
-                                      Treatment*Years_Since_Exclosure +
-                                      Group*Month +
-                                      Group*Years_Since_Exclosure +
-                                      Years_Since_Exclosure*Month +
-                                      Treatment*Group*Month +
-                                      (1|Year) +
-                                      (1|LocalityName/LocalityCode), data = final_albedo)
-                
-                #Summarize model
-                summary(model)
-                
-                #Examine model residuals
-                plot(model, alpha = 0.2)
-                
-                        #KEY POINT: Residuals have a very strange distribution - might need to try a GLME
-                
+        #STEP 7 ---------------------------
         
-        #Try
-        
+                #Add herbivore density data to 'plot_diff' dataframe
+                
+                        #Make copy of plot_diff df
+                        plot_diff_hd <- plot_diff
+                
+                        #Add DistrictID/Kommune number from 'site_data' df and herbivore densities
+                        #from hbiomass df
+                
+                                #Placeholder columns
+                                plot_diff_hd$DistrictID <- as.character('')
+                                plot_diff_hd$Moose_Density <- as.numeric('')
+                                plot_diff_hd$Red_Deer_Density <- as.numeric('')
+                                plot_diff_hd$Roe_Deer_Density <- as.numeric('')
+                                
                         
-        
-#END MODEL ----------------------------------------------------------------------------- 
+                                #Loop through rows
+                                for(i in 1:nrow(plot_diff_hd)){
+                                        
+                                        #District ID ----
+                                        
+                                                #Get loc name
+                                                loc <- plot_diff_hd[i, "LocalityName"]
+                                                
+                                                #Get district ID from site_data
+                                                id <- as.character(site_data$DistrictID[site_data$LocalityName == loc][1])
+                                                
+                                                #Format to match hbiomass2015 df (3-digit codes need 0 in front)
+                                                if(nchar(id) == 3){
+                                                        id <- paste("0", id, sep = "")
+                                                }
+                                                
+                                                plot_diff_hd[i, "DistrictID"] <- id
+                                                
+                                        #Herbivore Densities ---
+                                                
+                                                plot_diff_hd[i, "Moose_Density"] <- hbiomass2015$`hbiomass$Ms_2015`[hbiomass2015$kommnnr == id]
+                                                plot_diff_hd[i, "Red_Deer_Density"] <- hbiomass2015$`hbiomass$Rd__2015`[hbiomass2015$kommnnr == id]
+                                                plot_diff_hd[i, "Roe_Deer_Density"] <- hbiomass2015$`hbiomass$R_d_2015`[hbiomass2015$kommnnr == id]
+                                                
+                                }
+                             
+                                   
+                #GENERATE PLOTS ------
+                
+                        #RAW SCATTERPLOTS -----
+                                
+                                #MOOSE
+                                ggplot(data = subset(plot_diff_hd, Group == "Composite"), aes(x = Moose_Density, y = Mean_Albedo_Diff)) +
+                                        geom_point() +
+                                        facet_wrap(~ Month)
+                        
+                                #RED DEER
+                                ggplot(data = subset(plot_diff_hd, Group == "Composite"), aes(x = Red_Deer_Density, y = Mean_Albedo_Diff)) +
+                                        geom_point() +
+                                        facet_wrap(~ Month)
+                        
+                                #ROE DEER
+                                ggplot(data = subset(plot_diff_hd, Group == "Composite"), aes(x = Roe_Deer_Density, y = Mean_Albedo_Diff)) +
+                                        geom_point() +
+                                        facet_wrap(~ Month)
+                                
+                                        #No obvious trends
+                                
+                                
+                                
+                                
+                        #ROLLING MEANS OF MOOSE DENSITY -----
+                                
+                                
+                        
+                                
+                                
+                                
+                
+                        
+                        
+#END CALCULATE DELTA MEAN ALBEDO + SE AT PLOT LEVEL ---------------------------------------------------------------------------------
