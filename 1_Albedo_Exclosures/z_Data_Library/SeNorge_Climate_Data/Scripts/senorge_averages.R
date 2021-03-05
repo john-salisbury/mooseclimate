@@ -1,10 +1,14 @@
 #This script computes average temperature and SWE from SeNorge data for all Sustherb sites
-#Averages are computed for each month using all years of available data
+#Averages are computed for each month using all years of available data in each region
+#The final output is one set of monthly climate averages for each region
 
 #LOAD PACKAGES -----------------------------
 
         library(dplyr)
         library(ggplot2)
+        library(cowplot)
+        library(wesanderson)
+        library(beepr)
 
 #END LOAD PACKAGES -----------------------------
 
@@ -85,6 +89,29 @@
         climate_filt$Temperature_K <- climate_filt$tm_celsius + 273.15
         
         
+        #Assign REGION (Trøndelag, Telemark, and Hedmark) to data
+        
+                #Placeholder column
+                climate_filt$Region <- as.character('')
+                
+                #Loop through observations
+                for(i in 1:nrow(climate_filt)){
+                        
+                        print(i)
+                        
+                        #Get FID from climate data
+                        id <- climate_filt[i, "trondelag_"]
+                        
+                        #Get region corresponding to FID from locs data
+                        reg <- senorge_locs$Region[senorge_locs$FID == id]
+                        
+                        #Add to main df
+                        climate_filt[i, "Region"] <- reg
+                }
+                
+                beep(8)
+        
+        
 
 #END FORMAT/FILTER DATA -----------------------------
         
@@ -99,115 +126,150 @@
         #Define function to calculate SE
         std <- function(x) sd(x)/sqrt(length(x))
 
-        #MONTHLY AVERAGES FOR EACH YEAR -------
+        #MONTHLY AVERAGES FOR EACH YEAR IN EACH REGION -------
         #Note: these are generated solely for plotting purposes
         
                 #Create placeholder df
-                monthly_data <- data.frame("Month" = integer(),
+                monthly_data <- data.frame("Region" = character(),
+                                           "Month" = integer(),
                                            "Year" = integer(),
                                            'Temperature_K' = numeric(),
                                            'Temperature_SE' = numeric(),
                                            'SWE_mm' = numeric(),
                                            'SWE_SE' = numeric())
         
-                #Loop through years
-                for(i in min_year:max_year){
+                #Loop through each region
+                regions <- c("Trøndelag", "Hedmark", "Telemark")
+                
+                for(b in 1:length(regions)){
                         
-                        #Loop through each month
-                        for(j in 1:12){
+                        #Loop through years
+                        for(i in min_year:max_year){
                                 
-                                #Temp df
-                                temp <- data.frame("Month" = integer(),
-                                                   "Year" = integer(),
-                                                   'Temperature_K' = numeric(),
-                                                   'Temperature_SE' = numeric(),
-                                                   'SWE_mm' = numeric(),
-                                                   'SWE_SE' = numeric())
-                                
-                                temp[nrow(temp)+1,] <- NA
-                                
-                                #Add month
-                                temp$Month <- j
-                                
-                                #Add year
-                                temp$Year <- i
-                                
-                                #Avg. Temp (K) ----
-                                
-                                        #Calculate mean
-                                        monthly_mean_temp <- mean(climate_filt$Temperature_K[climate_filt$X_Year == i & climate_filt$X_Month == j])
-                                
-                                        #Calculate SE for temp
-                                        monthly_temp_se <- std(climate_filt$Temperature_K[climate_filt$X_Year == i & climate_filt$X_Month == j])
-                                
-                                        #Add to df
-                                        temp$Temperature_K <- monthly_mean_temp
-                                        temp$Temperature_SE <- monthly_temp_se
-                                
-                                #Avg. SWE (mm) ----
+                                #Loop through each month
+                                for(j in 1:12){
                                         
-                                        #Calculate mean
-                                        monthly_mean_swe <- mean(climate_filt$swe_mm[climate_filt$X_Year == i & climate_filt$X_Month == j])
+                                        #Temp df
+                                        temp <- data.frame("Region" = character(),
+                                                           "Month" = integer(),
+                                                           "Year" = integer(),
+                                                           'Temperature_K' = numeric(),
+                                                           'Temperature_SE' = numeric(),
+                                                           'SWE_mm' = numeric(),
+                                                           'SWE_SE' = numeric())
                                         
-                                        #Calculate SE for SWE
-                                        monthly_swe_se <- std(climate_filt$swe_mm[climate_filt$X_Year == i & climate_filt$X_Month == j])
+                                        temp[nrow(temp)+1,] <- NA
                                         
-                                        #Add to df
-                                        temp$SWE_mm <- monthly_mean_swe
-                                        temp$SWE_SE <- monthly_swe_se
+                                        #Add region
+                                        reg <- regions[b]
+                                        temp$Region <- reg
                                         
-                                #Append temp row to main df
-                                monthly_data <- rbind(monthly_data, temp)
+                                        #Add month
+                                        temp$Month <- j
+                                        
+                                        #Add year
+                                        temp$Year <- i
+                                        
+                                        #Avg. Temp (K) in Region B ----
+                                        
+                                                #Calculate mean
+                                                monthly_mean_temp <- mean(climate_filt$Temperature_K[climate_filt$X_Year == i &
+                                                                                                             climate_filt$X_Month == j &
+                                                                                                             climate_filt$Region == reg])
+                                        
+                                                #Calculate SE for temp
+                                                monthly_temp_se <- std(climate_filt$Temperature_K[climate_filt$X_Year == i &
+                                                                                                          climate_filt$X_Month == j &
+                                                                                                          climate_filt$Region == reg])
+                                        
+                                                #Add to df
+                                                temp$Temperature_K <- monthly_mean_temp
+                                                temp$Temperature_SE <- monthly_temp_se
+                                        
+                                        #Avg. SWE (mm) in Region B ----
+                                                
+                                                #Calculate mean
+                                                monthly_mean_swe <- mean(climate_filt$swe_mm[climate_filt$X_Year == i &
+                                                                                                     climate_filt$X_Month == j &
+                                                                                                     climate_filt$Region == reg])
+                                                
+                                                #Calculate SE for SWE
+                                                monthly_swe_se <- std(climate_filt$swe_mm[climate_filt$X_Year == i &
+                                                                                                  climate_filt$X_Month == j &
+                                                                                                  climate_filt$Region == reg])
+                                                
+                                                #Add to df
+                                                temp$SWE_mm <- monthly_mean_swe
+                                                temp$SWE_SE <- monthly_swe_se
+                                                
+                                        #Append temp row to main df
+                                        monthly_data <- rbind(monthly_data, temp)
+                                }
                         }
+                        
                 }
         
+                beep(8)
         
         
-        #MONTHLY AVERAGES USING ALL YEARS OF DATA -------
+        #MONTHLY AVERAGES (FOR EACH REGION) USING ALL YEARS OF DATA  -------
         #Note: this is what will be used in final analysis
         
                 #Create placeholder df
-                final_data <- data.frame("Month" = integer(),
+                final_data <- data.frame("Region" = character(),
+                                         "Month" = integer(),
                                          'Temperature_K' = numeric(),
                                          'Temperature_SE' = numeric(),
                                          'SWE_mm' = numeric(),
                                          'SWE_SE' = numeric())
                         
-                #Add 12 blank rows
-                final_data[nrow(final_data)+12,] <- NA
+                #Add 12 blank rows for each region (36 total)
+                final_data[nrow(final_data)+36,] <- NA
                 
-                #Add months
-                final_data$Month <- c(1:12)
-                        
+                #Add months (3 sets, one for each region)
+                final_data$Month <- c(1:12, 1:12, 1:12)
+                
+                #Add regions
+                final_data$Region <- c(rep("Trøndelag", 12), rep("Hedmark", 12), rep("Telemark", 12))
+                
                 #Compute average temperature (K) and average SWE (mm) for each month (using all years of data)
+                for(i in 1:nrow(final_data)){
+                        
+                        #Get month
+                        mt <- final_data[i, "Month"]
+                        
+                        #Get region
+                        reg <- final_data[i, "Region"]
+
+                        #Avg. Temp ----
+                        
+                                #Mean temp (K)
+                                mean_temp_k <- mean(climate_filt$Temperature_K[climate_filt$X_Month == mt &
+                                                                                       climate_filt$Region == reg])
+                                
+                                #Temp SE
+                                temp_se <- std(climate_filt$Temperature_K[climate_filt$X_Month == mt &
+                                                                                  climate_filt$Region == reg])
+                                
+                                #Add to df
+                                final_data[i, "Temperature_K"] <- mean_temp_k
+                                final_data[i, "Temperature_SE"] <- temp_se
+                                
+                        #Avg. SWE ----
+                                
+                                #Mean SWE (mm)
+                                mean_swe_mm <- mean(climate_filt$swe_mm[climate_filt$X_Month == mt &
+                                                                                climate_filt$Region == reg])
+                                
+                                #SWE SE
+                                swe_se <- std(climate_filt$swe_mm[climate_filt$X_Month == mt &
+                                                                          climate_filt$Region == reg])
+                                
+                                #Add to df
+                                final_data[i, "SWE_mm"] <- mean_swe_mm
+                                final_data[i, "SWE_SE"] <- swe_se
                 
-                        for(i in 1:12){
-                                
-                                #Avg. Temp ----
-                                
-                                        #Mean temp (K)
-                                        mean_temp_k <- mean(climate_filt$Temperature_K[climate_filt$X_Month == i])
-                                        
-                                        #Temp SE
-                                        temp_se <- std(climate_filt$Temperature_K[climate_filt$X_Month == i])
-                                        
-                                        #Add to df
-                                        final_data[i, "Temperature_K"] <- mean_temp_k
-                                        final_data[i, "Temperature_SE"] <- temp_se
-                                        
-                                #Avg. SWE ----
-                                        
-                                        #Mean SWE (mm)
-                                        mean_swe_mm <- mean(climate_filt$swe_mm[climate_filt$X_Month == i])
-                                        
-                                        #SWE SE
-                                        swe_se <- std(climate_filt$swe_mm[climate_filt$X_Month == i])
-                                        
-                                        #Add to df
-                                        final_data[i, "SWE_mm"] <- mean_swe_mm
-                                        final_data[i, "SWE_SE"] <- swe_se
-                                
-                        }
+                }
         
 
 #END COMPUTE AVERAGE T & SWE -----------------------------
@@ -229,94 +291,89 @@
         #Position dodge
         pd <- position_dodge(0.5)
         
-                
+        #Palette
+        pal <- wes_palette("Darjeeling1")
         
         #Temperature (K)
         
-                #Mean temps across study period (by month)
-                
-                        #Boxplot
-                        ggplot(monthly_data, aes(x = as.factor(Month), y = Temperature_K)) +
-                                geom_boxplot() +
-                                labs(x = "Month", y = "Mean Temperature (K)") + 
-                                theme_bw() +
-                                theme(
-                                        axis.title.x = element_text(size = 12, margin = margin(t=10)),
-                                        axis.title.y = element_text(size = 12, margin = margin(r=10))
-                                )
-                
-                        #Faceted plot
-                        ggplot(monthly_data, aes(x = Year, y = Temperature_K)) +
-                                geom_errorbar(aes(ymin = (Temperature_K - Temperature_SE), ymax = (Temperature_K + Temperature_SE)), colour="black", width=1) +
-                                geom_point() +
-                                geom_line(alpha = 0.8) +
-                                facet_wrap(~ Month, labeller = labeller(month_labs)) +
-                                labs(x = "Year", y = "Mean Temperature (K)") + 
-                                theme_bw() +
-                                scale_x_continuous(limits = c(2007, 2020), breaks = c(2010, 2014, 2018)) +
-                                theme(
-                                        axis.text.x = element_text(size = 8),
-                                        axis.title.x = element_text(size = 12, margin = margin(t=10)),
-                                        axis.title.y = element_text(size = 12, margin = margin(r=10))
-                                )
-        
                 #Final mean temp values
-                ggplot(final_data, aes(x = Month, y = Temperature_K)) +
-                        geom_errorbar(aes(ymin = (Temperature_K - Temperature_SE), ymax = (Temperature_K + Temperature_SE)), colour="#666666", width=0.5) +
-                        geom_point() +
-                        geom_line() +
-                        labs(x = "Month", y = "Mean Temperature (K)") + 
+                g1 <- ggplot(final_data, aes(x = Month, y = Temperature_K, color = Region, fill = Region)) +
+                        geom_ribbon(aes(ymin = (Temperature_K - Temperature_SE), ymax = (Temperature_K + Temperature_SE)), alpha = 0.5, lwd = 0.1) +
+                        geom_point(size = 0.5) +
+                        labs(x = "Month", y = "Temperature (K)") + 
                         theme_bw() +
                         scale_x_continuous(limits = c(1, 12), breaks = c(1:12)) +
+                        scale_color_manual(values = pal) +
+                        scale_fill_manual(values = pal) +
                         theme(
+                                legend.position = "none",
                                 axis.title.x = element_text(size = 12, margin = margin(t=10)),
-                                axis.title.y = element_text(size = 12, margin = margin(r=10))
-                        )
+                                axis.title.y = element_text(size = 12, margin = margin(r=10)),
+                                panel.grid.minor = element_blank()
+                        ) +
+                        guides(fill = F) +
+                        guides(color=guide_legend(override.aes=list(fill=pal[1:3])))
+                g1
         
         #SWE (mm)
         
-                #Mean SWE across study period (by month)
-                
-                        #Boxplot
-                        ggplot(monthly_data, aes(x = as.factor(Month), y = SWE_mm)) +
-                                geom_boxplot() +
-                                labs(x = "Month", y = "Mean SWE (mm)") + 
-                                theme_bw() +
-                                theme(
-                                        axis.title.x = element_text(size = 12, margin = margin(t=10)),
-                                        axis.title.y = element_text(size = 12, margin = margin(r=10))
-                                )
-                        
-                        #Faceted plot
-                        ggplot(monthly_data, aes(x = Year, y = SWE_mm)) +
-                                geom_errorbar(aes(ymin = (SWE_mm - SWE_SE), ymax = (SWE_mm + SWE_SE)), colour="#666666", width=1) +
-                                geom_point() +
-                                geom_line(alpha = 0.8) +
-                                facet_wrap(~ Month, labeller = labeller(month_labs)) +
-                                labs(x = "Year", y = "Mean SWE (mm)") + 
-                                theme_bw() +
-                                scale_x_continuous(limits = c(2007, 2020), breaks = c(2010, 2014, 2018)) +
-                                theme(
-                                        axis.text.x = element_text(size = 8),
-                                        axis.title.x = element_text(size = 12, margin = margin(t=10)),
-                                        axis.title.y = element_text(size = 12, margin = margin(r=10))
-                                )
-                        
                 #Final mean SWE values
-                ggplot(final_data, aes(x = Month, y = SWE_mm)) +
-                        geom_errorbar(aes(ymin = (SWE_mm - SWE_SE), ymax = (SWE_mm + SWE_SE)), colour="#666666", width=0.5) +
-                        geom_point() +
-                        geom_line() +
+                g2 <- ggplot(final_data, aes(x = Month, y = SWE_mm, color = Region)) +
+                        geom_ribbon(aes(ymin = (SWE_mm - SWE_SE), ymax = (SWE_mm + SWE_SE), color = Region, fill = Region), alpha = 0.5, lwd = 0.1) +
+                        geom_point(size = 0.5) +
                         labs(x = "Month", y = "Mean SWE (mm)") + 
                         theme_bw() +
                         scale_x_continuous(limits = c(1, 12), breaks = c(1:12)) +
+                        scale_color_manual(values = pal) +
+                        scale_fill_manual(values = pal) +
                         theme(
+                                legend.position = "none",
                                 axis.title.x = element_text(size = 12, margin = margin(t=10)),
-                                axis.title.y = element_text(size = 12, margin = margin(r=10))
-                        )
-        
-        
-        
+                                axis.title.y = element_text(size = 12, margin = margin(r=10)),
+                                panel.grid.minor = element_blank()
+                                
+                        ) +
+                        guides(fill = F) +
+                        guides(color=guide_legend(override.aes=list(fill=pal[1:3])))
+                g2
+                
+                
+        #COMBINED PLOT (Temp. and SWE)
+                
+                #Legend function
+                extract_legend <- function(my_ggp) {
+                        step1 <- ggplot_gtable(ggplot_build(my_ggp))
+                        step2 <- which(sapply(step1$grobs, function(x) x$name) == "guide-box")
+                        step3 <- step1$grobs[[step2]]
+                        return(step3)
+                }
+                
+                #Sample plot for universal legend
+                g1_l <- ggplot(final_data, aes(x = Month, y = Temperature_K, color = Region, fill = Region)) +
+                                geom_ribbon(aes(ymin = (Temperature_K - Temperature_SE), ymax = (Temperature_K + Temperature_SE)), alpha = 0.5, lwd = 0.1) +
+                                geom_point(size = 0.5) +
+                                labs(x = "Month", y = "Mean Temperature (K)") + 
+                                theme_bw() +
+                                scale_x_continuous(limits = c(1, 12), breaks = c(1:12)) +
+                                scale_color_manual(values = pal) +
+                                scale_fill_manual(values = pal) +
+                                theme(
+                                        legend.position = "bottom",
+                                        legend.background = element_rect(fill = "#fafafa", color = "#e6e6e6")
+                                ) +
+                                guides(fill = F) +
+                                guides(color=guide_legend(override.aes=list(fill=pal[1:3])))
+                
+                #Extract legend
+                shared_legend <- extract_legend(g1_l)
+                
+                top_row <- plot_grid(g1, NULL, g2, ncol = 3, rel_widths = c(0.475, 0.05, 0.475))
+                complex_plot <- plot_grid(top_row, shared_legend, ncol = 1, rel_heights = c(0.65, 0.1))
+                complex_plot
+                
+
+                
+                
         
 #END GENERATE PLOTS -----------------------------
         
