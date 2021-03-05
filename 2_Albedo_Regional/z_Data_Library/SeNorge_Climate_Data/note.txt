@@ -1,0 +1,6 @@
+NOTE:
+I have used the single set of climate averages (for SWE and T) produced in the exclosure experiment to calculate albedo for the SatSkog data product.
+
+These climate averages can be found at:
+
+1_Albedo_Exclosures/z_Data_Library/SeNorge_Climate_Data/Averages/average_climate_data.csv
