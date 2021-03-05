@@ -321,7 +321,7 @@
                 g2 <- ggplot(final_data, aes(x = Month, y = SWE_mm, color = Region)) +
                         geom_ribbon(aes(ymin = (SWE_mm - SWE_SE), ymax = (SWE_mm + SWE_SE), color = Region, fill = Region), alpha = 0.5, lwd = 0.1) +
                         geom_point(size = 0.5) +
-                        labs(x = "Month", y = "Mean SWE (mm)") + 
+                        labs(x = "Month", y = "SWE (mm)") + 
                         theme_bw() +
                         scale_x_continuous(limits = c(1, 12), breaks = c(1:12)) +
                         scale_color_manual(values = pal) +
