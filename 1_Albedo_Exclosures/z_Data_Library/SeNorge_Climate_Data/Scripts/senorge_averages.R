@@ -372,8 +372,6 @@
                 complex_plot
                 
 
-                
-                
         
 #END GENERATE PLOTS -----------------------------
         
