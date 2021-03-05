@@ -165,8 +165,7 @@
                         albedo$LocalityName[albedo$LocalityName == "stangeskovene eidskog "] <- "stangeskovene_eidskog"
 
                         
-                #For each row, add climate data (SWE/Temp)
-                        
+                        #Produce albedo estimates
                         for(i in 1:nrow(albedo)){
                                 
                                 print(i)
@@ -212,9 +211,9 @@
                                     
                                 #Calculate albedo (with species-specific equation)
                                         
-                                        if(spec == "Birch") {
+                                        if(spec == "Deciduous") {
                                                 
-                                                #Birch-specific equation
+                                                #Deciduous-specific equation
                                                 albedo[i, "Albedo"] <- 0.085+0.089*(1-1/(1+exp(-2.414*(albedo[i, "Temp_K"] - 273.393))))+0.169*(1/(1+exp(-0.107*(albedo[i, "SWE_mm"] - 37.672))))+0.245*exp(-0.023 * albedo[i, "Volume_m3ha"])*(1-0.7*exp(-0.004 * albedo[i, "SWE_mm"]))
 
                                         } else if (spec == "Pine") {
@@ -315,11 +314,11 @@
                                                                         b_prop <- tree_data$Prop_birch[tree_data$LocalityCode == used_sites[i] & tree_data$Year == j & tree_data$Plot == subplots[k]]
                                                                 }
                                                                 
-                                                                #Birch albedo
-                                                                if(length(albedo$Albedo[albedo$LocalityCode == used_sites[i] & albedo$Subplot == subplots[k] & albedo$Year == j & albedo$Month == l & albedo$Group == "Birch"]) == 0){
+                                                                #Deciduous albedo
+                                                                if(length(albedo$Albedo[albedo$LocalityCode == used_sites[i] & albedo$Subplot == subplots[k] & albedo$Year == j & albedo$Month == l & albedo$Group == "Deciduous"]) == 0){
                                                                         b_alb <- 0
                                                                 } else {
-                                                                        b_alb <- albedo$Albedo[albedo$LocalityCode == used_sites[i] & albedo$Subplot == subplots[k] & albedo$Year == j & albedo$Month == l & albedo$Group == "Birch"]
+                                                                        b_alb <- albedo$Albedo[albedo$LocalityCode == used_sites[i] & albedo$Subplot == subplots[k] & albedo$Year == j & albedo$Month == l & albedo$Group == "Deciduous"]
                                                                 }
 
                                                         #Pine----
@@ -689,7 +688,7 @@
                 #COMPLEX PLOT  -------------
                         
                         #Winter
-                        g1 <- ggplot(subset(albedo_means, Group == "Birch" & Season == "Winter"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                        g1 <- ggplot(subset(albedo_means, Group == "Deciduous" & Season == "Winter"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
                                 geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.35, lwd = 0) +
                                 geom_point(size = 0.4) +
                                 theme_bw() +
@@ -711,7 +710,7 @@
                         g1
                         
                         #Spring
-                        g2 <- ggplot(subset(albedo_means, Group == "Birch" & Season == "Spring"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                        g2 <- ggplot(subset(albedo_means, Group == "Deciduous" & Season == "Spring"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
                                 geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.35, lwd = 0) +
                                 geom_point(size = 0.4) +
                                 theme_bw() +
@@ -733,7 +732,7 @@
                         g2
                         
                         #Summer
-                        g3 <- ggplot(subset(albedo_means, Group == "Birch" & Season == "Summer"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                        g3 <- ggplot(subset(albedo_means, Group == "Deciduous" & Season == "Summer"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
                                 geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.35, lwd = 0) +
                                 geom_point(size = 0.4) +
                                 theme_bw() +
@@ -755,7 +754,7 @@
                         g3
                         
                         #Autumn
-                        g4 <- ggplot(subset(albedo_means, Group == "Birch" & Season == "Autumn"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                        g4 <- ggplot(subset(albedo_means, Group == "Deciduous" & Season == "Autumn"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
                                 geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.35, lwd = 0) +
                                 geom_point(size = 0.4) +
                                 theme_bw() +
@@ -787,7 +786,7 @@
                                 return(step3)
                         }
                         
-                        g1_l <- ggplot(subset(albedo_means, Group == "Birch" & Season == "Winter"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
+                        g1_l <- ggplot(subset(albedo_means, Group == "Deciduous" & Season == "Winter"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment, group = Treatment)) +
                                 geom_errorbar(position = pd, aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE)), colour="#666666", width=0.7) +
                                 geom_line(position = pd, aes(linetype = Treatment), lwd = 0.5) +
                                 geom_point(position = pd, size = 1.4) +
@@ -823,7 +822,7 @@
                 #"STANDARD" FACETED PLOTS
                         
                         #ERROR BARS FOR SE
-                        ggplot(subset(albedo_means, Group == "Birch"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment)) +
+                        ggplot(subset(albedo_means, Group == "Deciduous"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment)) +
                                 geom_errorbar(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE)), colour="#666666", width=0.55, position = pd) +
                                 geom_line(position = pd, aes(color = Treatment), lwd = 0.5) +
                                 geom_point(position = pd, aes(shape = Treatment, color = Treatment), size = 1) +
@@ -844,7 +843,7 @@
                                 #Export manually
                         
                         #SHADING FOR SE
-                        ggplot(subset(albedo_means, Group == "Birch"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment)) +
+                        ggplot(subset(albedo_means, Group == "Deciduous"), aes(x = Years_Since_Exclosure, y = Mean_Subplot_Albedo, color = Treatment)) +
                                 geom_ribbon(aes(ymin = (Mean_Subplot_Albedo - SE), ymax = (Mean_Subplot_Albedo + SE), fill = Treatment), alpha = 0.3, lwd = 0) +
                                 geom_point(position = pd, aes(shape = Treatment, color = Treatment), size = 0.6) +
                                 theme_bw() +
@@ -1434,7 +1433,7 @@
                                 
                                 #Birch mean albedo diff SE
                                 
-                                diff_means$SE[diff_means$Group == "Birch" & diff_means$Years_Since_Exclosure == i & diff_means$Month == j] <- std(plot_diff$Mean_Albedo_Diff[plot_diff$Years_Since_Exclosure == i & plot_diff$Group == "Birch" & plot_diff$Month == j])
+                                diff_means$SE[diff_means$Group == "Deciduous" & diff_means$Years_Since_Exclosure == i & diff_means$Month == j] <- std(plot_diff$Mean_Albedo_Diff[plot_diff$Years_Since_Exclosure == i & plot_diff$Group == "Deciduous" & plot_diff$Month == j])
                                 
                                 
                                 #Spruce mean albedo diff SE
@@ -1466,7 +1465,7 @@
                             height = 1200,
                             bg = "white")
                         
-                        ggplot(subset(diff_means, Group %in% c("Spruce", "Pine", "Birch")), aes(x = Years_Since_Exclosure, y = Mean_Albedo_Diff, color = Group, group = Group)) +
+                        ggplot(subset(diff_means, Group %in% c("Spruce", "Pine", "Deciduous")), aes(x = Years_Since_Exclosure, y = Mean_Albedo_Diff, color = Group, group = Group)) +
                                 geom_hline(lwd = 1, color = "#e6e6e6", yintercept = 0) +
                                 #geom_errorbar(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), colour="black", width=0.7, position = pd, alpha = 0.4) +
                                 geom_line(lwd = 1.2, position = pd, aes(linetype = Group), alpha = 0.4) +
@@ -1502,7 +1501,7 @@
                             height = 1800,
                             bg = "white")
                         
-                        ggplot(subset(diff_means, Group %in% c("Spruce", "Pine", "Birch")), aes(x = Years_Since_Exclosure, y = Mean_Albedo_Diff, color = Group, group = Group)) +
+                        ggplot(subset(diff_means, Group %in% c("Spruce", "Pine", "Deciduous")), aes(x = Years_Since_Exclosure, y = Mean_Albedo_Diff, color = Group, group = Group)) +
                                 geom_hline(lwd = 1, color = "#e6e6e6", yintercept = 0) +
                                 #geom_errorbar(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), colour="black", width=0.7, position = pd, alpha = 0.4) +
                                 geom_line(lwd = 1.2, position = pd, aes(linetype = Group), alpha = 0.4) +
@@ -1601,7 +1600,7 @@
                             height = 1600,
                             bg = "white")
                         
-                        ggplot(subset(reg_diff_means, Group %in% c("Spruce", "Pine", "Birch") & Month %in% c(1:3)), aes(x = Years_Since_Exclosure, y = Mean_Albedo_Diff, color = Group, group = Group)) +
+                        ggplot(subset(reg_diff_means, Group %in% c("Spruce", "Pine", "Deciduous") & Month %in% c(1:3)), aes(x = Years_Since_Exclosure, y = Mean_Albedo_Diff, color = Group, group = Group)) +
                                 geom_hline(lwd = 1, color = "#e6e6e6", yintercept = 0) +
                                 #geom_errorbar(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), colour="black", width=0.7, position = pd, alpha = 0.4) +
                                 geom_line(lwd = 1.2, position = pd, aes(linetype = Group), alpha = 0.4) +
@@ -1638,7 +1637,7 @@
                             height = 1600,
                             bg = "white")
                         
-                        ggplot(subset(reg_diff_means, Group %in% c("Spruce", "Pine", "Birch") & Month %in% c(1:3)), aes(x = Years_Since_Exclosure, y = Mean_Albedo_Diff, color = Group, group = Group)) +
+                        ggplot(subset(reg_diff_means, Group %in% c("Spruce", "Pine", "Deciduous") & Month %in% c(1:3)), aes(x = Years_Since_Exclosure, y = Mean_Albedo_Diff, color = Group, group = Group)) +
                                 geom_hline(lwd = 1, color = "#e6e6e6", yintercept = 0) +
                                 #geom_errorbar(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), colour="black", width=0.7, position = pd, alpha = 0.4) +
                                 #geom_line(lwd = 1.2, position = pd, aes(linetype = Group), alpha = 0.4) +
@@ -1737,16 +1736,148 @@
                                         #No obvious trends
                                 
                                 
-                                
-                                
-                        #ROLLING MEANS OF MOOSE DENSITY -----
-                                
-                                
-                        
-                                
-                                
-                                
-                
-                        
+
                         
 #END CALCULATE DELTA MEAN ALBEDO + SE AT PLOT LEVEL ---------------------------------------------------------------------------------
+
+
+
+
+#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+
+
+
+#PLOT MOOSE DENSITY VS BROWSED ALBEDO ---------------------------------------------------------------------------------
+                                
+        #Rationale: browsed sites represent a range of moose densities - theoretically, trends in albedo vs. 
+        #MD should be visible
+                                
+                #Filter albedo values to 'B' plots
+                browsed <- final_albedo[final_albedo$Treatment == "B",]
+                                
+                #Add moose density values
+                                
+                        #Placeholder columns
+                        browsed$DistrictID <- as.character('')
+                        browsed$Moose_Density <- as.numeric('')
+                        browsed$Red_Deer_Density <- as.numeric('')
+                        browsed$Roe_Deer_Density <- as.numeric('')
+                        
+                        
+                        #Loop through rows
+                        for(i in 1:nrow(browsed)){
+                                
+                                print(i)
+                                
+                                #District ID ----
+                                
+                                #Get loc name
+                                loc <- browsed[i, "LocalityName"]
+                                
+                                #Get district ID from site_data
+                                id <- as.character(site_data$DistrictID[site_data$LocalityName == loc][1])
+                                
+                                #Format to match hbiomass2015 df (3-digit codes need 0 in front)
+                                if(nchar(id) == 3){
+                                        id <- paste("0", id, sep = "")
+                                }
+                                
+                                browsed[i, "DistrictID"] <- id
+                                
+                                #Herbivore Densities ---
+                                
+                                browsed[i, "Moose_Density"] <- hbiomass2015$`hbiomass$Ms_2015`[hbiomass2015$kommnnr == id]
+                                browsed[i, "Red_Deer_Density"] <- hbiomass2015$`hbiomass$Rd__2015`[hbiomass2015$kommnnr == id]
+                                browsed[i, "Roe_Deer_Density"] <- hbiomass2015$`hbiomass$R_d_2015`[hbiomass2015$kommnnr == id]
+                                
+                        }
+                                
+                #Aggregate mean albedo values by group, moose density, month, and YSE
+                br_means <- aggregate(browsed$Albedo, by = list("Group" = browsed$Group,
+                                                                "Moose_Density" = browsed$Moose_Density,
+                                                                "Month" = browsed$Month,
+                                                                "Years_Since_Exclosure" = browsed$Years_Since_Exclosure), FUN = mean)
+                colnames(br_means)[5] <- 'Mean_Albedo'
+                
+                #Calculate rolling means
+                
+                        #Loop through months
+                        for(i in 1:12){
+                                
+                                #Loop through YSE
+                                for(j in 1:11){
+                                        
+                                        #By group
+                                        
+                                                #Composite
+                                                br_means$Rolling_Mean_Albedo[br_means$Group == "Composite" &
+                                                                                     br_means$Month == i &
+                                                                                     br_means$Years_Since_Exclosure == j]  <- rollmean(br_means$Mean_Albedo[br_means$Group == "Composite" &
+                                                                                                                                                                    br_means$Month == i &
+                                                                                                                                                                    br_means$Years_Since_Exclosure == j], 5, align = "right", na.pad = T)
+                                        
+                                                #Deciduous
+                                                br_means$Rolling_Mean_Albedo[br_means$Group == "Deciduous" &
+                                                                                     br_means$Month == i &
+                                                                                     br_means$Years_Since_Exclosure == j]  <- rollmean(br_means$Mean_Albedo[br_means$Group == "Deciduous" &
+                                                                                                                                                                    br_means$Month == i &
+                                                                                                                                                                    br_means$Years_Since_Exclosure == j], 5, align = "right", na.pad = T)
+                                        
+                                                #Pine
+                                                br_means$Rolling_Mean_Albedo[br_means$Group == "Pine" &
+                                                                                     br_means$Month == i &
+                                                                                     br_means$Years_Since_Exclosure == j]  <- rollmean(br_means$Mean_Albedo[br_means$Group == "Pine" &
+                                                                                                                                                                    br_means$Month == i &
+                                                                                                                                                                    br_means$Years_Since_Exclosure == j], 5, align = "right", na.pad = T)
+                                        
+                                                #Spruce
+                                                br_means$Rolling_Mean_Albedo[br_means$Group == "Spruce" &
+                                                                                     br_means$Month == i &
+                                                                                     br_means$Years_Since_Exclosure == j]  <- rollmean(br_means$Mean_Albedo[br_means$Group == "Spruce" &
+                                                                                                                                                                    br_means$Month == i &
+                                                                                                                                                                    br_means$Years_Since_Exclosure == j], 5, align = "right", na.pad = T)
+                                }
+                                
+                        }
+                
+                
+                #Generate rolling means plots (JAN and JUL + odd YSE only, to simplify plotting)
+                
+                        #Vector of YSE
+                        num <- c(1,6,11)
+                        
+                        #Generate plot labels
+                        
+                                #YSE
+                                years <- c("1 Year", "6 Years", "11 Years")
+                                yse_labs <- function(variable,value){
+                                        return(years[value])
+                                }
+                                
+                                mts <- c("Jan", "Jul")
+                                jan_jul <- function(variable,value){
+                                        return(mts[value])
+                                }
+                                
+                                
+                                
+                        #Plot
+                        ggplot(data = subset(br_means, Month %in% c(1,7) & Years_Since_Exclosure %in% num & Group != "Composite"), aes(x = Moose_Density, y = Rolling_Mean_Albedo, color = Group, group = Group)) +
+                                geom_line(alpha = 0.3) +
+                                geom_point(alpha = 0.3, size = 0.8) +
+                                facet_grid(Years_Since_Exclosure~Month, labeller = labeller(Years_Since_Exclosure = yse_labs, Month = jan_jul)) +
+                                theme_bw() +
+                                geom_line(data = subset(br_means, Month %in% c(1,7) & Years_Since_Exclosure %in% num & Group == "Composite"), color = "#333333") +
+                                geom_point(data = subset(br_means, Month %in% c(1,7) & Years_Since_Exclosure %in% num & Group == "Composite"), color = "#333333", size = 0.9) +
+                                labs(x = "Moose Metabolic Biomass" ~(kg/km^2), y = "Mean Albedo") +
+                                theme(
+                                        panel.grid.minor = element_blank(),
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10))
+                                )
+                        
+                        
+                                
+#PLOT MOOSE DENSITY VS BROWSED ALBEDO ---------------------------------------------------------------------------------
+                                
