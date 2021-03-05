@@ -10,6 +10,7 @@
         library(gridExtra)
         library(cowplot)
         library(beepr)
+        library(wesanderson)
         
 ###END PACKAGES ----------------------------------------------------------------------------------------
 
@@ -356,7 +357,7 @@
         
         #NOTE: Add more visualizations of RF once calculated
         
-                #Calculate mean delta biomass per year
+                #Calculate mean delta biomass per year (in each region)
                 
                         #Only calculate w/ first month of data (since biomass values are repeated 12x - once for each month)
                         base <- final[final$Month == 1,]
@@ -364,10 +365,11 @@
                         #Remove NA rows to allow for aggregation function
                         base <- base[!is.na(base$Delta_Biomass_kg_m2),]
         
-                        #Aggregate means
-                        mean_d_bio <- aggregate(base$Delta_Biomass_kg_m2, by = list("Years_Since_Exclosure" = base$Years_Since_Exclosure,
-                                                                                          "Treatment" = base$Treatment), FUN = mean)
-                        colnames(mean_d_bio)[3] <- 'Mean_Delta_Biomass_kg_m2'
+                        #Aggregate means (by REGION)
+                        mean_d_bio <- aggregate(base$Delta_Biomass_kg_m2, by = list("Region" = base$Region,
+                                                                                    "Years_Since_Exclosure" = base$Years_Since_Exclosure,
+                                                                                    "Treatment" = base$Treatment), FUN = mean)
+                        colnames(mean_d_bio)[4] <- 'Mean_Delta_Biomass_kg_m2'
                 
                 #Calculate SEs
                 
@@ -380,30 +382,36 @@
                         for(i in 1:nrow(mean_d_bio)){
                                 
                                 #Get variables for row i
+                                reg <- mean_d_bio[i, "Region"]
                                 yse <- mean_d_bio[i, "Years_Since_Exclosure"]
                                 tr <- mean_d_bio[i, "Treatment"]
                                 
 
                                 #Calculate SE
                                 se <- std(base$Delta_Biomass_kg_m2[base$Years_Since_Exclosure == yse &
-                                                                            base$Treatment == tr])
+                                                                           base$Treatment == tr &
+                                                                           base$Region == reg])
                                 
                                 #Add to df
                                 mean_d_bio[i, "SE"] <- se
                         }
         
-        #Plot delta biomass per unit area for each subplot across all years
+        #Plot mean delta biomass per unit area (by region)
                 
         pd <- position_dodge(0.25)
         label1 <- expression(Delta*' Biomass  ' ~(kg/m^2))
-        ggplot(data = mean_d_bio, aes(x = Years_Since_Exclosure, y = Mean_Delta_Biomass_kg_m2, group = Treatment)) +
-                        geom_errorbar(aes(ymin = (Mean_Delta_Biomass_kg_m2 - SE), ymax = (Mean_Delta_Biomass_kg_m2 + SE)), colour="#666666", width=0.55, position = pd) +
+        pal <- wes_palette("Darjeeling1")
+        
+        ggplot(data = mean_d_bio, aes(x = Years_Since_Exclosure, y = Mean_Delta_Biomass_kg_m2, group = Treatment, color = Treatment)) +
+                        geom_errorbar(aes(ymin = (Mean_Delta_Biomass_kg_m2 - SE), ymax = (Mean_Delta_Biomass_kg_m2 + SE)), colour="#666666", width=0.25, position = pd) +
                         geom_line(lwd = 0.5, position = pd, aes(linetype = Treatment)) +
                         geom_point(position = pd, aes(shape = Treatment)) +
                         theme_bw() +
                         geom_hline(mapping = aes(yintercept = 0), linetype = 2, lwd = 0.5, color = "#999999") +
+                        facet_wrap(~Region, ncol = 1) +
                         labs(x = "Years Since Exclosure", y = label1) +
                         scale_x_continuous(breaks = c(1:11)) +
+                        scale_color_manual(values = pal) +
                         theme(
                                 legend.position = "right",
                                 axis.title.x = element_text(margin = margin(t = 10)),

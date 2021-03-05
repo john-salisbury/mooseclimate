@@ -501,6 +501,8 @@
 
 #PLOT ALBEDO AT SUBPLOT LEVEL ---------------------------------------------------------------------------------
         
+        #READ CSV OF ALBEDO MEANS
+        albedo_means <- read.csv("1_Albedo_Exclosures/1_Data_Processing/4_Albedo_Estimates/Output/mean_subplot_albedo_by_region.csv", header = T)
                 
         #COMPOSITE ALBEDO -----------
                 
