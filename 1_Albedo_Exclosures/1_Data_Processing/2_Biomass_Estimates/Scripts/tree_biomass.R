@@ -15,6 +15,7 @@
         library(dplyr)
         library(tidyr)
         library(ggplot2)
+        library(wesanderson)
         
 ###END PACKAGES ----------------------------------------------------------------------------------------
 
@@ -141,25 +142,30 @@
 #BIOMASS CALCULATION FOR EACH SET OF TREES ---------------------------------------------------------------
         
         #Add a blank column to hold biomass
-        data$Biomass_g <- as.numeric('')
+        data$Subplot_Total_Biomass_g <- as.numeric('')
         
         # Loop through each row of the dataframe (2016, Trøndelag, <6m height, browsed)
         # and produce a volume estimate
-        for(row in 1:nrow(data)){
                 
-                print(row)
+        #NOTE: Each row represents observations of a specific species in a specific height class in a specific subplot
+        ## The 'quantity' variable indicates how many trees of a species in a height class in a subplot were observed
+        ## in a given year. Thus, to calculate biomass/unit area, the height class is multiplied by the quantity
+        
+        for(i in 1:nrow(data)){
+                
+                print(i)
                 
                 #Grab necessary parameters
                 
                         #Get tree species
-                        species <- as.character(data[row, "Taxa"])
+                        species <- as.character(data[i, "Taxa"])
                 
                         #Get height class (in 50cm increments)
-                        h <- as.numeric(data[row, "Height_class_50cm"])
+                        h <- as.numeric(data[i, "Height_class_50cm"])
                         h <- h*50
                         
                         #Get treatment
-                        treatment <- data[row, "Treatment"]
+                        treatment <- data[i, "Treatment"]
                 
                 #CALCULATE BIOMASS FOR EACH TREE (OR OBSERVATION OF MULTIPLE TREES) USING HEIGHT-ONLY ALLOMETRIC EQUATIONS
                 
@@ -227,8 +233,14 @@
                                 
                         }
                         
+                        #IMPORTANT - MULTIPLY CALCULATED BIOMASS x QUANTITY IN HEIGHT CLASS OBSERVED
+                        
+                                #Get quantity
+                                q <- data[i, "Quantity"]
+                                final_bio <- y*q
+                        
                         #Add calculated biomass to 'Biomass' column
-                        data[row, "Biomass_g"] <- y
+                        data[i, "Subplot_Total_Biomass_g"] <- final_bio
                 
         }
         
@@ -253,8 +265,13 @@
                 
         #Filter out observations w/ NA biomass & reset Taxa factor levels
                 
-                data <- data[!is.na(data$Biomass_g),]
+                data <- data[!is.na(data$Subplot_Total_Biomass_g),]
                 data$Taxa <- as.factor(as.character(data$Taxa))
+                
+                
+                
+        #DECISION MADE TO REMOVE TWO SITES FROM HEDMARK IN 2nd year of exclosure
+        data <- data[!(data$Region == "Hedmark" & data$Years_Since_Exclosure == 2),]
                 
 
         
@@ -291,11 +308,11 @@
         #TOTAL SUBPLOT BIOMASS BY TREATMENT --------------
                 
                 #Sum total biomass (g) for each plot
-                plot_df <- aggregate(data$Biomass_g, by = list("Years_Since_Exclosure" = data$Years_Since_Exclosure,
-                                                               "Region" = data$Region,
-                                                               "LocalityName" = data$LocalityName,
-                                                               "Treatment" = data$Treatment,
-                                                               "Plot" = data$Plot), FUN = sum)
+                plot_df <- aggregate(data$Subplot_Total_Biomass_g, by = list("Years_Since_Exclosure" = data$Years_Since_Exclosure,
+                                                                               "Region" = data$Region,
+                                                                               "LocalityName" = data$LocalityName,
+                                                                               "Treatment" = data$Treatment,
+                                                                               "Plot" = data$Plot), FUN = sum)
                 
                 colnames(plot_df)[6] <- "Summed_biomass_subplot_kg"
                 
@@ -350,14 +367,22 @@
                                 }
                         
                 #Plot mean subplot biomass by treatment and year (w/ SE)
-                                
+                        
+                        #Palette
+                        pal <- wes_palette("Darjeeling1")
+                        
+                        #Treatment Nice Name (for plotting)
+                        avg_biomass_df$TNN[avg_biomass_df$Treatment == "B"] <- "Browsed"
+                        avg_biomass_df$TNN[avg_biomass_df$Treatment == "UB"] <- "Unbrowsed"
+
                         #Plot
-                        ggplot(data = avg_biomass_df, aes(x = Years_Since_Exclosure, y = Mean_subplot_biomass_kg_m2, group = Treatment)) +
+                        ggplot(data = avg_biomass_df, aes(x = Years_Since_Exclosure, y = Mean_subplot_biomass_kg_m2, color = TNN, group = TNN)) +
                                 geom_errorbar(aes(ymin = (Mean_subplot_biomass_kg_m2 - SE), ymax = (Mean_subplot_biomass_kg_m2 + SE)), colour="black", width=0.5, position = position_dodge(0.2)) +
-                                geom_point(aes(shape = Treatment), size = 1.75, position = position_dodge(0.2)) +
-                                geom_line(aes(linetype = Treatment)) +
-                                labs(x = "Years Since Exclosure", y = "Mean Subplot Biomass "~(kg/m^2)) +
+                                geom_point(aes(shape = TNN), size = 1.75, position = position_dodge(0.2)) +
+                                geom_line(aes(linetype = TNN)) +
+                                labs(x = "Years Since Exclosure", y = "Aboveground Biomass "~(kg/m^2), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
                                 scale_x_continuous(breaks = c(1,3,5,7,9,11)) +
+                                scale_color_manual(values = pal) +
                                 theme_bw() +
                                 theme(
                                         axis.title.x = element_text(size = 12, margin = margin(t=10)),
@@ -372,7 +397,7 @@
         #SPECIES-SPECIFIC SUBPLOT BIOMASS BY TREATMENT --------------
         
                 #Sum species-specific biomass (g) for each subplot
-                spec_df <- aggregate(data$Biomass_g, by = list("Years_Since_Exclosure" = data$Years_Since_Exclosure,
+                spec_df <- aggregate(data$Subplot_Total_Biomass_g, by = list("Years_Since_Exclosure" = data$Years_Since_Exclosure,
                                                                "Region" = data$Region,
                                                                "LocalityName" = data$LocalityName,
                                                                "Treatment" = data$Treatment,
@@ -431,13 +456,18 @@
                                 #Add simplified Taxa column w/o Norwegian name
                                 spec_biomass_df$simple_taxa <- sub("^(\\S*\\s+\\S+).*", "\\1", spec_biomass_df$Taxa)
                                 
-                                ggplot(data = spec_biomass_df, aes(x = Years_Since_Exclosure, y = Mean_subplot_biomass_kg_m2, group = Treatment)) +
+                                #Treatment Nice Name (for plotting)
+                                spec_biomass_df$TNN[spec_biomass_df$Treatment == "B"] <- "Browsed"
+                                spec_biomass_df$TNN[spec_biomass_df$Treatment == "UB"] <- "Unbrowsed"
+                                
+                                ggplot(data = spec_biomass_df, aes(x = Years_Since_Exclosure, y = Mean_subplot_biomass_kg_m2, color = TNN, group = TNN)) +
                                         geom_errorbar(aes(ymin = (Mean_subplot_biomass_kg_m2 - SE), ymax = (Mean_subplot_biomass_kg_m2 + SE)), colour="black", width=0.5, position = position_dodge(0.3)) +
-                                        geom_point(aes(shape = Treatment), size = 1.75, position = position_dodge(0.3)) +
-                                        geom_line(aes(linetype = Treatment)) +
+                                        geom_point(aes(shape = TNN), size = 1.75, position = position_dodge(0.3)) +
+                                        geom_line(aes(linetype = TNN)) +
                                         facet_wrap(~simple_taxa, nrow = 2) +
-                                        labs(x = "Years Since Exclosure", y = "Mean Subplot Biomass "~(kg/m^2)) +
+                                        labs(x = "Years Since Exclosure", y = "Aboveground Biomass "~(kg/m^2), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
                                         scale_x_continuous(breaks = c(2,4,6,8,10)) +
+                                        scale_color_manual(values = pal) +
                                         theme_bw() +
                                         theme(
                                                 axis.title.x = element_text(size = 12, margin = margin(t=10)),
@@ -467,7 +497,7 @@
                      
                            
                 #Sum group-specific biomass (g) in each subplot (instead of summing by taxa)
-                spec_simp <- aggregate(data$Biomass_g, by = list("Years_Since_Exclosure" = data$Years_Since_Exclosure,
+                spec_simp <- aggregate(data$Subplot_Total_Biomass_g, by = list("Years_Since_Exclosure" = data$Years_Since_Exclosure,
                                                                "Region" = data$Region,
                                                                "LocalityName" = data$LocalityName,
                                                                "Treatment" = data$Treatment,
@@ -520,14 +550,19 @@
                                 
                 #Plot mean subplot biomass by species, treatment and year (w/ SE)
                                 
+                        #Treatment Nice Name (for plotting)
+                        spec_simp_bio$TNN[spec_simp_bio$Treatment == "B"] <- "Browsed"
+                        spec_simp_bio$TNN[spec_simp_bio$Treatment == "UB"] <- "Unbrowsed"
+                        
                         #Plot
-                        ggplot(data = spec_simp_bio, aes(x = Years_Since_Exclosure, y = Mean_subplot_biomass_kg_m2, group = Treatment)) +
+                        ggplot(data = spec_simp_bio, aes(x = Years_Since_Exclosure, y = Mean_subplot_biomass_kg_m2, color = TNN, group = TNN)) +
                                 geom_errorbar(aes(ymin = (Mean_subplot_biomass_kg_m2 - SE), ymax = (Mean_subplot_biomass_kg_m2 + SE)), colour="black", width=0.5, position = position_dodge(0.3)) +
-                                geom_point(aes(shape = Treatment), size = 1.75, position = position_dodge(0.3)) +
-                                geom_line(aes(linetype = Treatment)) +
+                                geom_point(aes(shape = TNN), size = 1.75, position = position_dodge(0.3)) +
+                                geom_line(aes(linetype = TNN)) +
                                 facet_wrap(~Group, nrow = 3) +
-                                labs(x = "Years Since Exclosure", y = "Mean Subplot Biomass "~(kg/m^2)) +
+                                labs(x = "Years Since Exclosure", y = "Aboveground Biomass "~(kg/m^2), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
                                 scale_x_continuous(breaks = c(1,3,5,7,9,11)) +
+                                scale_color_manual(values = pal) +
                                 theme_bw() +
                                 theme(
                                         axis.title.x = element_text(size = 12, margin = margin(t=10)),
@@ -574,14 +609,20 @@
                         
                         #Plot mean subplot biomass by species, treatment and year (w/ SE)
                                         
+                                #Treatment nice names (for plotting)
+                                total_reg$TNN[total_reg$Treatment == "B"] <- "Browsed"
+                                total_reg$TNN[total_reg$Treatment == "UB"] <- "Unbrowsed"
+
+                                        
                                 #Plot
-                                ggplot(data = total_reg, aes(x = Years_Since_Exclosure, y = Mean_subplot_biomass_kg_m2, group = Treatment)) +
+                                ggplot(data = total_reg, aes(x = Years_Since_Exclosure, y = Mean_subplot_biomass_kg_m2, color = TNN, group = TNN)) +
                                         geom_errorbar(aes(ymin = (Mean_subplot_biomass_kg_m2 - SE), ymax = (Mean_subplot_biomass_kg_m2 + SE)), colour="black", width=0.5, position = position_dodge(0.3)) +
-                                        geom_point(aes(shape = Treatment), size = 1.75, position = position_dodge(0.3)) +
-                                        geom_line(aes(linetype = Treatment)) +
+                                        geom_point(aes(shape = TNN), size = 1.75, position = position_dodge(0.3)) +
+                                        geom_line(aes(linetype = TNN)) +
                                         facet_wrap(~Region, nrow = 3) +
-                                        labs(x = "Years Since Exclosure", y = "Mean Subplot Biomass "~(kg/m^2)) +
+                                        labs(x = "Years Since Exclosure", y = "Aboveground Biomass "~(kg/m^2), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
                                         scale_x_continuous(breaks = c(1,3,5,7,9,11)) +
+                                        scale_color_manual(values = pal) +
                                         theme_bw() +
                                         theme(
                                                 axis.title.x = element_text(size = 12, margin = margin(t=10)),
@@ -629,14 +670,19 @@
                                 
                 #Plot mean subplot biomass by group, region, treatment and year (w/ SE)
                                 
+                        #Treatment nice names (for plotting)
+                        spec_simp_region$TNN[spec_simp_region$Treatment == "B"] <- "Browsed"
+                        spec_simp_region$TNN[spec_simp_region$Treatment == "UB"] <- "Unbrowsed"       
+                                
                         #Plot
-                        ggplot(data = spec_simp_region, aes(x = Years_Since_Exclosure, y = Mean_subplot_biomass_kg_m2, group = Treatment)) +
+                        ggplot(data = spec_simp_region, aes(x = Years_Since_Exclosure, y = Mean_subplot_biomass_kg_m2, color = TNN, group = TNN)) +
                                 geom_errorbar(aes(ymin = (Mean_subplot_biomass_kg_m2 - SE), ymax = (Mean_subplot_biomass_kg_m2 + SE)), colour="black", width=0.5, position = position_dodge(0.3)) +
-                                geom_point(aes(shape = Treatment), size = 1.75, position = position_dodge(0.3)) +
-                                geom_line(aes(linetype = Treatment)) +
+                                geom_point(aes(shape = TNN), size = 1.75, position = position_dodge(0.3)) +
+                                geom_line(aes(linetype = TNN)) +
                                 facet_grid(Region~Group) +
-                                labs(x = "Years Since Exclosure", y = "Mean Subplot Biomass "~(kg/m^2)) +
+                                labs(x = "Years Since Exclosure", y = "Aboveground Biomass "~(kg/m^2), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
                                 scale_x_continuous(breaks = c(1,3,5,7,9,11)) +
+                                scale_color_manual(values = pal) +
                                 theme_bw() +
                                 theme(
                                         axis.title.x = element_text(size = 12, margin = margin(t=10)),

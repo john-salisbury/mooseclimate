@@ -6,9 +6,9 @@
 ## (based on tree species proportions within each subplot) is used to calculate a 'composite'
 ## subplot albedo value
 
-## Note: albedo estimates are produced using average T and SWE data for each of the REGIONS
+## Note: albedo estimates are produced using average T and SWE data for CLIMATE AVERAGES SPECIFIC TO EACH LOCALITYNAME (i.e. study site)
 ## (produced by taking mean of climate data across all years of available SustHerb tree data
-## within each region)
+## at each site)
 
 ## Note: I chose to include herbivore density data from 2015 in the final analysis, as this represents
 ## a nice temporal midpoint in the 2009-2019 tree data
@@ -26,8 +26,6 @@
         library(sf)
         library(raster)
         library(zoo)
-        library(lme4)
-        library(lmerTest)
         library(beepr)
         
 ###END PACKAGES ----------------------------------------------------------------------------------------
@@ -56,7 +54,7 @@
         
         #AVG. SENORGE SWE (mm) and TEMP (K) DATA (one set of values, averaged from data across 2009-2019) 
                 
-                clim <- read.csv('1_Albedo_Exclosures/z_Data_Library/SeNorge_Climate_Data/Averages/average_climate_data.csv', header = TRUE)
+                clim <- read.csv('1_Albedo_Exclosures/z_Data_Library/SeNorge_Climate_Data/Averages/average_climate_data_by_site.csv', header = TRUE)
                 
                 
         #HERBIVORE DENSITY DATA (2015 - MUNICIPALITY RESOLUTION)
@@ -205,15 +203,15 @@
                                 #Get climate data for corresponding month in CORRESPONDING REGION ------
                                         
                                         #Use average values from across study period (2009-2019) for all years
-                                        #within each region (Trøndelag, Telemark, Hedmark)
+                                        #AT EACH SUSTHERB SITE (connect via LocalityName variable)
                                         
                                                 #Temperature (K)
                                                 albedo[i, "Temp_K"] <- clim$Temperature_K[clim$Month == mt &
-                                                                                                  clim$Region == reg]
+                                                                                                  clim$LocalityName == b]
                                         
                                                 #SWE (mm)
                                                 albedo[i, "SWE_mm"] <- clim$SWE_mm[clim$Month == mt &
-                                                                                           clim$Region == reg]
+                                                                                           clim$LocalityName == b]
                                 
                                     
                                 #Calculate albedo (with species-specific equation)
@@ -237,12 +235,15 @@
                                         
                         }
                         
+                beep(8)
+                        
                 #Remove arbitrary index column
                 albedo <- albedo[,c(2:15)]
                 
                 #Remove "Volume_m3" column
                 albedo <- albedo[,c(1:7,9:14)]
                         
+                
                         
         #CALCULATE SINGLE COMPOSITE ALBEDO VALUE IN SEPARATE DATAFRAME
                         
@@ -264,6 +265,9 @@
                         
                                 #LocalityCode
                                 loc <- as.character(used_sites[i])
+                                
+                                #LocalityName
+                                loc_name <- as.character(site_data$LocalityName[site_data$LocalityCode == loc])
                         
                                 #Treatment
                                 if(site_data$Treatment[site_data$LocalityCode == used_sites[i]] == "open"){
@@ -306,17 +310,17 @@
                                                 
                                                 #SWE (from corresponding region)
                                                 swe <- clim$SWE_mm[clim$Month == l &
-                                                                           clim$Region == reg]
+                                                                           clim$LocalityName == loc_name]
                                                 
                                                 #Temp (from corresponding region)
                                                 temps <- clim$Temperature_K[clim$Month == l &
-                                                                                    clim$Region == reg]
+                                                                                    clim$LocalityName == loc_name]
                                                 
                                                 #CALCULATE COMPOSITE ALBEDO (WEIGHTED AVG BASED ON SPECIES PROPORTIONS)
                                                 
-                                                        #Birch----
+                                                        #Deciduous----
                                                 
-                                                                #Birch prop
+                                                                #Deciduous prop
                                                                 if(length(tree_data$Prop_birch[tree_data$LocalityCode == used_sites[i] & tree_data$Year == j & tree_data$Plot == subplots[k]]) == 0){
                                                                         b_prop <- 0
                                                                 } else {
@@ -560,4 +564,74 @@
         write.csv(albedo_reg, "1_Albedo_Exclosures/1_Data_Processing/4_Albedo_Estimates/Output/mean_subplot_albedo_by_region.csv")
                 
                 
-#END CALCULATE MEAN ALBEDO BY REGION AT SUBPLOT LEVEL ---------------------------------------------------------------------------------- 
+#END CALCULATE MEAN ALBEDO BY REGION AT SUBPLOT LEVEL ----------------------------------------------------------------------------------
+        
+        
+        
+
+#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+
+
+
+#CALCULATE MEAN ALBEDO **BY LOCALITYNAME** AT SUBPLOT LEVEL -------------------------------------------------------------------------------------
+
+        #Aggregate means for each group, month, and year since exclosure (WITHIN EACH REGION)
+        #Note: not doing anything with 'year' variable, since we're using a single set of
+        #average climate values per region
+        
+        albedo_site <- aggregate(final_albedo$Albedo, by = list("LocalityName" = final_albedo$LocalityName,
+                                                               "Treatment" = final_albedo$Treatment,
+                                                               "Years_Since_Exclosure" = final_albedo$Years_Since_Exclosure,
+                                                               "Group" = final_albedo$Group,
+                                                               "Month" = final_albedo$Month), FUN = mean)
+        
+        colnames(albedo_site)[6] <- "Mean_Subplot_Albedo"
+        
+        #VERIFIED THAT AGGREGATE PRODUCED CORRECT MEANS HERE
+        
+        #Calculate standard error for each mean
+        
+                #Define function
+                std <- function(x) sd(x)/sqrt(length(x))
+                
+                #Add placeholder columns
+                albedo_site$SE <- as.numeric('')
+        
+                #Calculate SEs for each species/group, month, and year
+                for(i in 1:nrow(albedo_site)){
+                        
+                        print(i)
+                        
+                        #Get variables
+                        loc <- albedo_site[i, "LocalityName"]
+                        tr <- albedo_site[i, "Treatment"]
+                        yse <- albedo_site[i, "Years_Since_Exclosure"]
+                        mt <- albedo_site[i, "Month"]
+                        gr <- albedo_site[i, "Group"]
+                        
+                        #Calculate SE for albedo
+                        se <- std(final_albedo$Albedo[final_albedo$LocalityName == loc &
+                                                              final_albedo$Treatment == tr &
+                                                              final_albedo$Group == gr &
+                                                              final_albedo$Years_Since_Exclosure == yse &
+                                                              final_albedo$Month == mt])
+                        
+                        #Add to df
+                        albedo_site[i, "SE"] <- se
+                        
+                }
+                beep(8)
+        
+        
+        
+        #WRITE CSV OF MEAN SUBPLOT ALBEDO VALUES BY REGION
+        write.csv(albedo_site, "1_Albedo_Exclosures/1_Data_Processing/4_Albedo_Estimates/Output/mean_subplot_albedo_by_site.csv")
+        
+        
+        
+        
+#END CALCULATE MEAN ALBEDO **BY LOCALITYNAME** AT SUBPLOT LEVEL -------------------------------------------------------------------------------------
+        
+        
+        
