@@ -119,14 +119,21 @@
                 
                 #CALCULATE DELTA ALBEDO AT EACH SITE
                 #At each study site, calculate difference in mean plot albedo between exclosure and open plot
+                
                 plot_diff <- aggregate(plot_means$Avg_Plot_Albedo, by = list("LocalityName" = plot_means$LocalityName,
                                                                              "Group" = plot_means$Group,
                                                                              "Years_Since_Exclosure" = plot_means$Years_Since_Exclosure,
                                                                              "Month" = plot_means$Month), FUN = diff)
                 colnames(plot_diff)[5] <- "Mean_Albedo_Diff"
                 
-                #Fix numeric(0) list error
-                plot_diff$Mean_Albedo_Diff <- as.numeric(plot_diff$Mean_Albedo_Diff)
+                #NOTE: At LocalityNames where a species appears in one treatment but not the other,
+                #a numeric(0) error appears. Instead of setting this to 0, it should be set as NA 
+                #(since a difference can't actually be calculated)
+                
+                        plot_diff$Mean_Albedo_Diff <- as.character(plot_diff$Mean_Albedo_Diff)
+                        plot_diff$Mean_Albedo_Diff[plot_diff$Mean_Albedo_Diff == "numeric(0)"] <- NA
+                        plot_diff$Mean_Albedo_Diff <- as.numeric(plot_diff$Mean_Albedo_Diff)
+                        
                 
         
         #STEP 3 ------------
@@ -357,27 +364,40 @@
                                       "#38598b",
                                       "#440e57")
                         
-                        #SINGLE COMPOSITE PLOT
+                        #SINGLE COMPOSITE PLOT W/ TEXT ANNOTATION
                         reg_filt$Years_Since_Exclosure <- as.factor(reg_filt$Years_Since_Exclosure)
-                        ggplot(data = subset(reg_filt, Group == "Composite"), aes(x = Month, y = Mean_Albedo_Diff, group = Years_Since_Exclosure, color = Years_Since_Exclosure, fill = Years_Since_Exclosure)) +
-                                geom_ribbon(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), alpha = 0.15, lwd = 0) +
-                                geom_point(size = 1.8, position = pd) +
-                                geom_line(position = pd, alpha = 0.8) +
-                                labs(x = "Month", y = expression(Delta*' Albedo (Excl. - Open)'), color = "Years Since Exclosure:", fill = "Years Since Exclosure:", shape = "Years Since Exclosure:") +
-                                facet_wrap(~Region, ncol = 3) +
-                                scale_x_continuous(breaks = c(1:12)) +
-                                scale_color_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
-                                scale_fill_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
-                                theme_bw() +
-                                theme(
-                                        legend.background = element_rect(fill="#fafafa",
-                                                                         size=0.1, linetype="solid", 
-                                                                         colour ="#666666"),
-                                        legend.position = "bottom",
-                                        axis.title.x = element_text(margin = margin(t = 10)),
-                                        axis.title.y = element_text(margin = margin(r = 10)),
-                                        panel.grid.minor = element_blank()
-                                ) 
+                        
+                        #Text label
+                        delta_sym <- '\U0394'
+                        first <- paste("*Positive values of ", delta_sym, " albedo indicate higher albedo in", sep = "")
+                        sec <- "exclosures relative to corresponding open plots"
+                        lab <- paste(first, sec, sep = "\n")
+                        text_annotation <- text_grob(lab, face = "italic", color = "#333333", size = 9)
+                        
+                        g1 <- ggplot(data = subset(reg_filt, Group == "Composite"), aes(x = Month, y = Mean_Albedo_Diff, group = Years_Since_Exclosure, color = Years_Since_Exclosure, fill = Years_Since_Exclosure)) +
+                                        geom_ribbon(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), alpha = 0.15, lwd = 0) +
+                                        geom_point(size = 1.8, position = pd) +
+                                        geom_line(position = pd, alpha = 0.8) +
+                                        labs(x = "Month", y = expression(Delta*' Albedo (Excl. - Open)'), color = "Years Since Exclosure:", fill = "Years Since Exclosure:", shape = "Years Since Exclosure:") +
+                                        facet_wrap(~Region, ncol = 3) +
+                                        scale_x_continuous(breaks = c(1:12)) +
+                                        scale_y_continuous(limits = c(-0.031, 0.031)) +
+                                        scale_color_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
+                                        scale_fill_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
+                                        theme_bw() +
+                                        theme(
+                                                legend.background = element_rect(fill="#fafafa",
+                                                                                 size=0.1, linetype="solid", 
+                                                                                 colour ="#666666"),
+                                                legend.position = "bottom",
+                                                axis.title.x = element_text(margin = margin(t = 10)),
+                                                axis.title.y = element_text(margin = margin(r = 10)),
+                                                panel.grid.minor = element_blank()
+                                        )
+                        g1
+                        
+                        stacked <- plot_grid(NULL, text_annotation, NULL, g1, ncol = 1, rel_heights = c(0.01, 0.05, 0.025, 0.915))
+                        stacked
                         
                         
                         
@@ -392,7 +412,7 @@
                                                 geom_line(position = pd, alpha = 0.8) +
                                                 labs(x = "Month", y = expression(Delta*' Albedo (Excl. - Open)'), color = "Years Since Exclosure:", fill = "Years Since Exclosure:", shape = "Years Since Exclosure:") +
                                                 facet_wrap(~Region, ncol = 3) +
-                                                ggtitle("Composite") +
+                                                ggtitle("(a) Composite Albedo") +
                                                 scale_x_continuous(breaks = c(1:12)) +
                                                 scale_y_continuous(limits = c(-0.031, 0.031)) +
                                                 scale_color_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
@@ -403,7 +423,7 @@
                                                         axis.title.x = element_text(margin = margin(t = 4)),
                                                         axis.title.y = element_text(margin = margin(r = 4)),
                                                         panel.grid.minor = element_blank(),
-                                                        plot.title = element_text(hjust = 0.5),
+                                                        plot.title = element_text(hjust = 0, face = "bold", margin = margin(b = 6), size = 12),
                                                         axis.text.x = element_text(size = 6),
                                                         axis.text.y = element_text(size = 8)
                                                 ) 
@@ -416,7 +436,7 @@
                                                 geom_line(position = pd, alpha = 0.8) +
                                                 labs(x = "Month", y = expression(Delta*' Albedo (Excl. - Open)'), color = "Years Since Exclosure:", fill = "Years Since Exclosure:", shape = "Years Since Exclosure:") +
                                                 facet_wrap(~Region, ncol = 3) +
-                                                ggtitle("Spruce") +
+                                                ggtitle("(b) Spruce Albedo") +
                                                 scale_x_continuous(breaks = c(1:12)) +
                                                 scale_y_continuous(limits = c(-0.031, 0.031)) +
                                                 scale_color_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
@@ -427,7 +447,7 @@
                                                         axis.title.x = element_text(margin = margin(t = 4)),
                                                         axis.title.y = element_text(margin = margin(r = 4)),
                                                         panel.grid.minor = element_blank(),
-                                                        plot.title = element_text(hjust = 0.5),
+                                                        plot.title = element_text(hjust = 0, face = "bold", margin = margin(b = 6), size = 12),
                                                         axis.text.x = element_text(size = 6),
                                                         axis.text.y = element_text(size = 8)
                                                 )
@@ -441,7 +461,7 @@
                                         geom_line(position = pd, alpha = 0.8) +
                                         labs(x = "Month", y = expression(Delta*' Albedo (Excl. - Open)'), color = "Years Since Exclosure:", fill = "Years Since Exclosure:", shape = "Years Since Exclosure:") +
                                         facet_wrap(~Region, ncol = 3) +
-                                        ggtitle("Pine") +
+                                        ggtitle("(c) Pine Albedo") +
                                         scale_x_continuous(breaks = c(1:12)) +
                                         scale_y_continuous(limits = c(-0.031, 0.031)) +
                                         scale_color_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
@@ -452,7 +472,7 @@
                                                 axis.title.x = element_text(margin = margin(t = 4)),
                                                 axis.title.y = element_text(margin = margin(r = 4)),
                                                 panel.grid.minor = element_blank(),
-                                                plot.title = element_text(hjust = 0.5),
+                                                plot.title = element_text(hjust = 0, face = "bold", margin = margin(b = 6), size = 12),
                                                 axis.text.x = element_text(size = 6),
                                                 axis.text.y = element_text(size = 8)
                                         )
@@ -466,7 +486,7 @@
                                         geom_line(position = pd, alpha = 0.8) +
                                         labs(x = "Month", y = expression(Delta*' Albedo (Excl. - Open)'), color = "Years Since Exclosure:", fill = "Years Since Exclosure:", shape = "Years Since Exclosure:") +
                                         facet_wrap(~Region, ncol = 3) +
-                                        ggtitle("Deciduous") +
+                                        ggtitle("(d) Deciduous Albedo") +
                                         scale_x_continuous(breaks = c(1:12)) +
                                         scale_y_continuous(limits = c(-0.031, 0.031)) +
                                         scale_color_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
@@ -477,7 +497,7 @@
                                                 axis.title.x = element_text(margin = margin(t = 4)),
                                                 axis.title.y = element_text(margin = margin(r = 4)),
                                                 panel.grid.minor = element_blank(),
-                                                plot.title = element_text(hjust = 0.5),
+                                                plot.title = element_text(hjust = 0, face = "bold", margin = margin(b = 6), size = 12),
                                                 axis.text.x = element_text(size = 6),
                                                 axis.text.y = element_text(size = 8)
                                                 
@@ -524,12 +544,12 @@
                                 sec <- "exclosures relative to corresponding open plots"
                                 lab <- paste(first, sec, sep = "\n")
                                 text_annotation <- text_grob(lab, face = "italic", color = "#333333", size = 9)
-                                top_row <- plot_grid(shared_legend, NULL, text_annotation, ncol = 3, rel_widths = c(0.475, 0.05, 0.475))
-                                
+                                top_row <- plot_grid(text_annotation, ncol = 1)
                                 middle_row <- plot_grid(g1, NULL, g2, ncol = 3, rel_widths = c(0.49, 0.02, 0.49))
                                 spacer_row <- plot_grid(NULL, ncol = 1)
                                 bottom_row <- plot_grid(g3, NULL, g4, ncol = 3, rel_widths = c(0.49, 0.02, 0.49))
-                                complex_plot <- plot_grid(top_row, spacer_row, middle_row, spacer_row, bottom_row, ncol = 1, rel_heights = c(0.05, 0.025, 0.45, 0.025, 0.45))
+                                legend <- plot_grid(shared_legend, ncol = 1)
+                                complex_plot <- plot_grid(top_row, spacer_row, middle_row, spacer_row, bottom_row, legend, ncol = 1, rel_heights = c(0.035, 0.025, 0.425, 0.025, 0.425, 0.065))
                                 complex_plot
                                 
                                 #Save as SVG

@@ -371,10 +371,10 @@
                 albedo_filt$Treatment <- as.factor(albedo_filt$Treatment)
                 
                 ggplot(data = albedo_filt, aes(x = Month, y = Mean_Subplot_Albedo, color = interaction(Treatment, Years_Since_Exclosure), linetype = interaction(Treatment, Years_Since_Exclosure))) +
-                        geom_point(size = 1.8, shape = 4, position = pd) +
-                        geom_line(position = pd, alpha = 0.8) +
+                        geom_point(size = 1, shape = 1, position = pd) +
+                        geom_line(position = pd, alpha = 0.6) +
                         labs(y = "Albedo", color = "Treatment", linetype = "Treatment") +
-                        facet_wrap(~Region, ncol = 3) +
+                        facet_wrap(~Region, ncol = 2) +
                         scale_x_continuous(breaks = c(1:12)) +
                         scale_linetype_manual(labels = plot_labs,
                                               values = c(1,4,1,4,1,4,1,4,1,4)) +
@@ -386,11 +386,13 @@
                                 legend.background = element_rect(fill="#fafafa",
                                                                  size=0.1, linetype="solid", 
                                                                  colour ="#666666"),
-                                legend.position = "bottom",
+                                legend.position = c(0.75,0.25),
                                 axis.title.x = element_text(margin = margin(t = 10)),
                                 axis.title.y = element_text(margin = margin(r = 10)),
                                 panel.grid.minor = element_blank()
-                        ) 
+                        ) +
+                        guides(color=guide_legend(nrow=5,byrow=TRUE)) +
+                        guides(linetype=guide_legend(nrow=5,byrow=TRUE))
                 
                 
 #END PLOT ALBEDO - MONTH ON X-AXIS ------------------------------------------------------------------
