@@ -560,7 +560,136 @@
                                        scale = 1.25)
 
                         
-                        
+        
+        #VARIATION OF COMPLEX PLOT ABOVE
+
+                #Hedmark - top-left
+                g1 <- ggplot(data = subset(reg_filt, Region == "Hedmark"), aes(x = Month, y = Mean_Albedo_Diff, group = Years_Since_Exclosure, color = Years_Since_Exclosure, fill = Years_Since_Exclosure)) +
+                        geom_ribbon(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), alpha = 0.15, lwd = 0) +
+                        geom_point(size = 1.3, position = pd) +
+                        geom_line(position = pd, alpha = 0.8) +
+                        labs(x = "Month", y = expression(Delta*' Albedo (Excl. - Open)'), color = "Years Since Exclosure:", fill = "Years Since Exclosure:", shape = "Years Since Exclosure:") +
+                        facet_wrap(~Group, ncol = 4) +
+                        ggtitle("(a) Hedmark") +
+                        scale_x_continuous(breaks = c(1:12)) +
+                        scale_y_continuous(limits = c(-0.031, 0.031)) +
+                        scale_color_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
+                        scale_fill_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
+                        theme_bw() +
+                        theme(
+                                legend.position = "none",
+                                axis.title.x = element_text(margin = margin(t = 4)),
+                                axis.title.y = element_text(margin = margin(r = 4)),
+                                panel.grid.minor = element_blank(),
+                                plot.title = element_text(hjust = 0, face = "bold", margin = margin(b = 6), size = 12),
+                                axis.text.x = element_text(size = 6),
+                                axis.text.y = element_text(size = 8)
+                        ) 
+                g1
+                
+                
+                #Telemark - top-right
+                g2 <- ggplot(data = subset(reg_filt, Region == "Telemark"), aes(x = Month, y = Mean_Albedo_Diff, group = Years_Since_Exclosure, color = Years_Since_Exclosure, fill = Years_Since_Exclosure)) +
+                        geom_ribbon(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), alpha = 0.15, lwd = 0) +
+                        geom_point(size = 1.3, position = pd) +
+                        geom_line(position = pd, alpha = 0.8) +
+                        labs(x = "Month", y = expression(Delta*' Albedo (Excl. - Open)'), color = "Years Since Exclosure:", fill = "Years Since Exclosure:", shape = "Years Since Exclosure:") +
+                        facet_wrap(~Group, ncol = 4) +
+                        ggtitle("(b) Telemark") +
+                        scale_x_continuous(breaks = c(1:12)) +
+                        scale_y_continuous(limits = c(-0.031, 0.031)) +
+                        scale_color_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
+                        scale_fill_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
+                        theme_bw() +
+                        theme(
+                                legend.position = "none",
+                                axis.title.x = element_text(margin = margin(t = 4)),
+                                axis.title.y = element_text(margin = margin(r = 4)),
+                                panel.grid.minor = element_blank(),
+                                plot.title = element_text(hjust = 0, face = "bold", margin = margin(b = 6), size = 12),
+                                axis.text.x = element_text(size = 6),
+                                axis.text.y = element_text(size = 8)
+                        )
+                g2
+                
+                
+                #Trøndelag - bottom-left
+                g3 <- ggplot(data = subset(reg_filt, Region == "Trøndelag"), aes(x = Month, y = Mean_Albedo_Diff, group = Years_Since_Exclosure, color = Years_Since_Exclosure, fill = Years_Since_Exclosure)) +
+                        geom_ribbon(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), alpha = 0.15, lwd = 0) +
+                        geom_point(size = 1.3, position = pd) +
+                        geom_line(position = pd, alpha = 0.8) +
+                        labs(x = "Month", y = expression(Delta*' Albedo (Excl. - Open)'), color = "Years Since Exclosure:", fill = "Years Since Exclosure:", shape = "Years Since Exclosure:") +
+                        facet_wrap(~Group, ncol = 4) +
+                        ggtitle("(c) Trøndelag") +
+                        scale_x_continuous(breaks = c(1:12)) +
+                        scale_y_continuous(limits = c(-0.031, 0.031)) +
+                        scale_color_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
+                        scale_fill_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
+                        theme_bw() +
+                        theme(
+                                legend.position = "none",
+                                axis.title.x = element_text(margin = margin(t = 4)),
+                                axis.title.y = element_text(margin = margin(r = 4)),
+                                panel.grid.minor = element_blank(),
+                                plot.title = element_text(hjust = 0, face = "bold", margin = margin(b = 6), size = 12),
+                                axis.text.x = element_text(size = 6),
+                                axis.text.y = element_text(size = 8)
+                        )
+                g3
+                
+                
+                #Legend function
+                extract_legend <- function(my_ggp) {
+                        step1 <- ggplot_gtable(ggplot_build(my_ggp))
+                        step2 <- which(sapply(step1$grobs, function(x) x$name) == "guide-box")
+                        step3 <- step1$grobs[[step2]]
+                        return(step3)
+                }
+                
+                #Additional graph to extract legend from
+                
+                g1_l <- ggplot(data = subset(reg_filt, Region == "Trøndelag"), aes(x = Month, y = Mean_Albedo_Diff, group = Years_Since_Exclosure, color = Years_Since_Exclosure, fill = Years_Since_Exclosure)) +
+                                geom_ribbon(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), alpha = 0.15, lwd = 0) +
+                                geom_point(size = 1.3, position = pd) +
+                                geom_line(position = pd, alpha = 0.8) +
+                                labs(x = "Month", y = expression(Delta*' Albedo (Excl. - Open)'), color = "Years Since Exclosure:", fill = "Years Since Exclosure:", shape = "Years Since Exclosure:") +
+                                facet_wrap(~Group, ncol = 4) +
+                                ggtitle("(c) Trøndelag") +
+                                scale_x_continuous(breaks = c(1:12)) +
+                                scale_y_continuous(limits = c(-0.031, 0.031)) +
+                                scale_color_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
+                                scale_fill_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
+                                theme_bw() +
+                                theme(
+                                        legend.position = "bottom",
+                                        legend.box.just = "center",
+                                        legend.background = element_rect(fill="#fafafa",
+                                                                         size=0.1, linetype="solid", 
+                                                                         colour ="#666666"),
+                                        axis.title.x = element_text(margin = margin(t = 4)),
+                                        axis.title.y = element_text(margin = margin(r = 4)),
+                                        panel.grid.minor = element_blank(),
+                                        plot.title = element_text(hjust = 0, face = "bold", margin = margin(b = 6), size = 12),
+                                        axis.text.x = element_text(size = 6),
+                                        axis.text.y = element_text(size = 8)
+                                )  +
+                                guides(color=guide_legend(nrow=1,byrow=TRUE))
+                g1_l
+
+                #Extract legend
+                shared_legend <- extract_legend(g1_l)
+                
+                #Generate complex plot
+                delta_sym <- '\U0394'
+                first <- paste("*Positive values of ", delta_sym, " albedo indicate higher albedo in", sep = "")
+                sec <- "exclosures relative to corresponding open plots"
+                lab <- paste(first, sec, sep = "\n")
+                text_annotation <- text_grob(lab, face = "italic", color = "#333333", size = 9)
+                complex_plot <- plot_grid(text_annotation, NULL, g1, NULL, g2, NULL, g3, NULL, shared_legend, ncol = 1, rel_heights = c(0.05, 0.025, 0.275, 0.025, 0.275, 0.025, 0.275, 0.025, 0.05))
+                complex_plot
+                
+                #EXPORT @ 800x900px
+                
        
                                 
 
