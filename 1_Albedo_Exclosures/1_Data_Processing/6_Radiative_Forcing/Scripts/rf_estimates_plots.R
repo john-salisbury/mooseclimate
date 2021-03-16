@@ -51,7 +51,7 @@
                 #    will take an average of subplot biomass later)
                 
                         #Sum biomass in each subplot
-                        subplot_df <- aggregate(biomass$Biomass_g, by = list("Region" = biomass$Region,
+                        subplot_df <- aggregate(biomass$Subplot_Total_Biomass_g, by = list("Region" = biomass$Region,
                                                                            "LocalityName" = biomass$LocalityName,
                                                                            "LocalityCode" = biomass$LocalityCode,
                                                                            "Treatment" = biomass$Treatment,
@@ -402,14 +402,18 @@
         label1 <- expression(Delta*' Biomass  ' ~(kg/m^2))
         pal <- wes_palette("Darjeeling1")
         
-        ggplot(data = mean_d_bio, aes(x = Years_Since_Exclosure, y = Mean_Delta_Biomass_kg_m2, group = Treatment, color = Treatment)) +
+        #Treatment nice name
+        mean_d_bio$TNN[mean_d_bio$Treatment == "B"] <- "Browsed"
+        mean_d_bio$TNN[mean_d_bio$Treatment == "UB"] <- "Unbrowsed"
+        
+        ggplot(data = mean_d_bio, aes(x = Years_Since_Exclosure, y = Mean_Delta_Biomass_kg_m2, group = TNN, color = TNN)) +
                         geom_errorbar(aes(ymin = (Mean_Delta_Biomass_kg_m2 - SE), ymax = (Mean_Delta_Biomass_kg_m2 + SE)), colour="#666666", width=0.25, position = pd) +
-                        geom_line(lwd = 0.5, position = pd, aes(linetype = Treatment)) +
-                        geom_point(position = pd, aes(shape = Treatment)) +
+                        geom_line(lwd = 0.5, position = pd, aes(linetype = TNN)) +
+                        geom_point(position = pd, aes(shape = TNN)) +
                         theme_bw() +
                         geom_hline(mapping = aes(yintercept = 0), linetype = 2, lwd = 0.5, color = "#999999") +
                         facet_wrap(~Region, ncol = 1) +
-                        labs(x = "Years Since Exclosure", y = label1) +
+                        labs(x = "Years Since Exclosure", y = label1, color = "Treatment:", linetype = "Treatment:", shape = "Treatment:") +
                         scale_x_continuous(breaks = c(1:11)) +
                         scale_color_manual(values = pal) +
                         theme(

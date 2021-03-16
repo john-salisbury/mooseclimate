@@ -192,7 +192,7 @@
         #Assess multicollinearity between continuous numerical variables ------
         
                 #Grab numerical variables (for "composite" albedo only)
-                numerical <- model_data[model_data$Group == "Composite",c(14,16:19)]
+                numerical <- model_data[model_data$Group == "Composite",c(12,15,17:20)]
                 
                 #Correlation matrix of numerical variables
                 png(filename = "1_Albedo_Exclosures/1_Data_Processing/5_Albedo_Model/Output/Plots/correlation_matrix.png",
@@ -219,32 +219,50 @@
                         #RESULTS:
                 
                         # Productivity Index is moderately correlated with Mean Canopy Height (0.405), and slightly correlated with Roe Deer Density (0.208)
-                        # and Red Deer Density (-0.171)
+                        # and Red Deer Density (-0.171) - recommend by supervisors to choose productivity index instead of canopy height
                 
                         # Moose Density is moderately correlated with Roe Deer Density (0.547) and slightly correlated with Red Deer Density (-0.226)
+                                #Also recommend to include solely moose density (instead of other deer densities) for simplicity/interpretability
                 
-                        
-                        #DECISION:
-                
-                                #Should I include productivity index or mean canopy height? Productivity index has more slight correlations
-                                #than mean canopy height.
-                
-                                #Moderate/strong correlation between MD and RDD suggests that I should exclude Roe Deer Density from model
-                
+                       
         
         #Assess assumptions to use LMM ---------
         
                 
                 
-        #Other variables to include?
+        #TWO LMM MODELS:
                 
-                #Treatment (obviously)
-                #LocalityCode (since data within a specific LocalityCode is non-independent)
-                #LocalityName (since data at a specific study site is non-independent)
-                #Region (since data in a specific region may be non-independent)
-                #Month (data from month to month is non-independent - also want to see effect of month + treatment on albedo)
-                #Years_Since_Exclosure (data from year to year is non-independent - also want to see effect of YSE + treatment on albedo)
+                #Model A (Presence/Absence of Moose)
                 
+                        #Data:
+                                #All data
+                
+                        #Fixed Effects:
+                                #Treatment
+                                #Years_Since_Exclosure
+                                #SWE
+                                #Productivity Index
+                
+                        #Random Effects:
+                                #Region
+                                #LocalityName
+                                #LocalityCode
+                
+                #Model B (Moose Density (only looking at open plots))
+                
+                        #Data:
+                                #Only exclosures
+                
+                        #Fixed Effects:
+                                #Treatment
+                                #Years_Since_Exclosure
+                                #SWE
+                                #Productivity Index
+                        
+                        #Random Effects:
+                                #Region
+                                #LocalityName
+                                #LocalityCode
 
         
 #END EXPLORATORY DIAGNOSTIC PLOTS -----------------------------------------------------------------------------------
@@ -259,8 +277,8 @@
 
 #STATISTICAL MODELING --------------------------------------------------------------------------------------
                 
-        #Prepare final data for model (only "Composite" albedo)
-        final_model_data <- model_data[model_data$Group == "Composite",c(1:4,6,10,13,16:17,19)]
+        #Prepare final data for model with selected variables (only "Composite" albedo)
+        final_model_data <- model_data[model_data$Group == "Composite",c(2:5,7,12,14,15,17)]
         
                 #Save final model data
                 write.csv(final_model_data, "1_Albedo_Exclosures/1_Data_Processing/5_Albedo_Model/Output/albedo_FINAL_model_data.csv")
@@ -269,18 +287,18 @@
         #START HERE:
         final_model_data <- read.csv("1_Albedo_Exclosures/1_Data_Processing/5_Albedo_Model/Output/albedo_FINAL_model_data.csv", header = T)
                 
-        #Construct LMM:
+        #MODEL A:
                 
-                #(1) Includes all possible variables and interaction effects
+                model_a <- lmer(Albedo ~ Treatment*SWE_mm*Years_Since_Exclosure*Productivity_Index + (1 | Region/LocalityName/LocalityCode), data = final_model_data)
+                plot(resid(model_a))
+                summary(model_a)
                 
-                #(2) Includes Month and Years_Since_Exclosure as fixed effects instead of random effects (since we're interested in seeing
-                #    the parameter estimates)
                 
-                #(3) Includes nested random effects for Region/LocalityName/LocalityCode (since nesting is explicit in data)
+        #MODEL B:
                 
-                base_model <- lmer(Albedo ~ Treatment*Month*Years_Since_Exclosure*Moose_Density*Red_Deer_Density*Mean_Canopy_Height + (1 | Region/LocalityName/LocalityCode), data = final_model_data)
-                plot(resid(base_model))
-                summary(base_model)
+                model_b <- lmer(Albedo ~ Moose_Density*SWE_mm*Years_Since_Exclosure*Productivity_Index + (1 | Region/LocalityName/LocalityCode), data = subset(final_model_data, Treatment == "B"))
+                plot(resid(model_b))
+                summary(model_b)
 
         
 #END STATISTICAL MODELING -----------------------------------------------------------------------------------

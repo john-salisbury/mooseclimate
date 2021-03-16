@@ -182,10 +182,7 @@
                                         
                                 }
                                 
-                        }
-                        
-                        #Picea abies model (Spruce)
-                        else if( species == "Picea abies (Gran)" | species == "Juniperus communis (Einer)"){
+                        } else if( species == "Picea abies (Gran)" | species == "Juniperus communis (Einer)"){
                                 
                                 if(treatment == "B"){
                                         
@@ -197,10 +194,7 @@
                                         
                                 }
                                 
-                        }
-                        
-                        #Pinus sylvestris model (Pine)
-                        else if( species == "Pinus sylvestris (Furu)" ){
+                        } else if( species == "Pinus sylvestris (Furu)" ){
                                 
                                 if(treatment == "B"){
                                         
@@ -212,10 +206,7 @@
                                         
                                 }
                               
-                        }
-                        
-                        #Sorbus aucuparia model (Rowan)
-                        else if( species == "Sorbus aucuparia (Rogn)" ){
+                        } else if( species == "Sorbus aucuparia (Rogn)" ){
                                 
                                 if(treatment == "B"){
                                         
