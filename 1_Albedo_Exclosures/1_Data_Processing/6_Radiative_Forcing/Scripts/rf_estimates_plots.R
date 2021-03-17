@@ -1,5 +1,10 @@
 ## Script to calculate radiative forcing using albedo and delta biomass (kg/m2)
 
+## Note - delta biomass (annual timescale) and delta albedo (monthly and annual timescale)
+## are calculated for EACH PLOT (subplot values of biomass and albedo are averaged, THEN
+## deltas are calculated - thus, the RF estimates produced by this script will be on the
+## PLOT level)
+
 
 ##PACKAGES ----------------------------------------------------------------------------------------
 
@@ -70,19 +75,12 @@
                                         #Square meters
                                         subplot_area <- pi*(2^2) #12.57m2
                                         
-                                        #Hectares (divide m2 by 10000)
-                                        subplot_area_ha <- subplot_area/10000
-                                
-                                
                                 #Divide each value for kg by plot_area
                                         
                                         #Square meters
                                         subplot_df$Total_Biomass_kg_m2 <- subplot_df$Total_Biomass_kg / subplot_area 
                                         
-                                        #Hectares
-                                        subplot_df$Total_Biomass_kg_ha <- subplot_df$Total_Biomass_kg / subplot_area_ha
-                                
-                                        #Now we have TOTAL BIOMASS per unit area (both in kg/m2 and kg/ha) for EACH CIRCULAR
+                                        #Now we have TOTAL BIOMASS per unit area (both in kg/m2) for EACH CIRCULAR
                                         #SUBPLOT in a given plot
                                 
                                         #We can then take the average of biomass within each subplot for each PLOT
@@ -90,24 +88,26 @@
                 #(2) Get average biomass (kg/m2) for each PLOT (take mean of all subplots in a given plot)
                 
                         #Aggregate means by plot
-                        biomass_plot_means <- aggregate(subplot_df$Total_Biomass_kg_m2, by = list("Region" = subplot_df$Region,
-                                                                                                  "LocalityName" = subplot_df$LocalityName,
-                                                                                                  "LocalityCode" = subplot_df$LocalityCode,
-                                                                                                  "Treatment" = subplot_df$Treatment,
-                                                                                                  "Years_Since_Exclosure" = subplot_df$Years_Since_Exclosure), FUN = mean)
-                        colnames(biomass_plot_means)[6] <- "Mean_Plot_Biomass_kg_m2"
                         
-                        #Add column w/ kg/ha
-                        biomass_means_kg_ha <- aggregate(subplot_df$Total_Biomass_kg_ha, by = list("Region" = subplot_df$Region,
-                                                                                                  "LocalityName" = subplot_df$LocalityName,
-                                                                                                  "LocalityCode" = subplot_df$LocalityCode,
-                                                                                                  "Treatment" = subplot_df$Treatment,
-                                                                                                  "Years_Since_Exclosure" = subplot_df$Years_Since_Exclosure), FUN = mean)
-                        colnames(biomass_means_kg_ha)[6] <- "Mean_Plot_Biomass_kg_ha"
+                                #kg
+                                biomass_plot_means <- aggregate(subplot_df$Total_Biomass_kg, by = list("Region" = subplot_df$Region,
+                                                                                                          "LocalityName" = subplot_df$LocalityName,
+                                                                                                          "LocalityCode" = subplot_df$LocalityCode,
+                                                                                                          "Treatment" = subplot_df$Treatment,
+                                                                                                          "Years_Since_Exclosure" = subplot_df$Years_Since_Exclosure), FUN = mean)
+                                colnames(biomass_plot_means)[6] <- "Mean_Plot_Biomass_kg"
+                                        
+                                #kg/m2
+                                biomass_plot_means_m2 <- aggregate(subplot_df$Total_Biomass_kg_m2, by = list("Region" = subplot_df$Region,
+                                                                                                          "LocalityName" = subplot_df$LocalityName,
+                                                                                                          "LocalityCode" = subplot_df$LocalityCode,
+                                                                                                          "Treatment" = subplot_df$Treatment,
+                                                                                                          "Years_Since_Exclosure" = subplot_df$Years_Since_Exclosure), FUN = mean)
+                                colnames(biomass_plot_means_m2)[6] <- "Mean_Plot_Biomass_kg_m2"
                         
-                        #Join column w/ first biomass df
-                        biomass_plot_means <- cbind(biomass_plot_means, biomass_means_kg_ha$Mean_Plot_Biomass_kg_ha)
-                        colnames(biomass_plot_means)[7] <- "Mean_Plot_Biomass_kg_ha"
+                                #Join columns into one df
+                                biomass_plot_means <- cbind(biomass_plot_means, biomass_plot_means_m2$Mean_Plot_Biomass_kg_m2)
+                                colnames(biomass_plot_means)[7] <- "Mean_Plot_Biomass_kg_m2"
                         
                 #Fix "stangeskovene eidskog " space issue
                 biomass_plot_means$LocalityName[biomass_plot_means$LocalityName == 'stangeskovene eidskog '] <- 'stangeskovene_eidskog'
@@ -212,6 +212,8 @@
                         
                 }
                 
+                beep(8)
+                
                         #NOW, for every plot, there should be delta albedo values (from the previous month), 
                         #EXCEPT for the first month of the first year of data (since we don't know the 
                         #starting albedo)
@@ -220,9 +222,9 @@
         #STEP 3 (Biomass for each plot) --------
                 
                 #Add placeholder columns
+                final$Mean_Plot_Biomass_kg <- as.numeric('')
                 final$Mean_Plot_Biomass_kg_m2 <- as.numeric('')
-                final$Mean_Plot_Biomass_kg_ha <- as.numeric('')
-                
+
                 #Add corresponding biomass to each row
                 #NOTE: biomass values will be repeated 12x (once for each month of albedo)
                 for(i in 1:nrow(final)){
@@ -237,25 +239,26 @@
                         #Grab biomass where variables match
                         
                                 #kg/m2
-                                bio_1 <- biomass_plot_means$Mean_Plot_Biomass_kg_m2[biomass_plot_means$Region == reg &
+                                bio_1 <- biomass_plot_means$Mean_Plot_Biomass_kg[biomass_plot_means$Region == reg &
                                                                                           biomass_plot_means$LocalityName == loc &
                                                                                           biomass_plot_means$LocalityCode == plot &
                                                                                           biomass_plot_means$Treatment == tr &
                                                                                           biomass_plot_means$Years_Since_Exclosure == yse]
                                 
                                 #kg/ha
-                                bio_2 <- biomass_plot_means$Mean_Plot_Biomass_kg_ha[biomass_plot_means$Region == reg &
+                                bio_2 <- biomass_plot_means$Mean_Plot_Biomass_kg_m2[biomass_plot_means$Region == reg &
                                                                                             biomass_plot_means$LocalityName == loc &
                                                                                             biomass_plot_means$LocalityCode == plot &
                                                                                             biomass_plot_means$Treatment == tr &
                                                                                             biomass_plot_means$Years_Since_Exclosure == yse]
                         
                         #Add biomass values to final dataframe
-                        final[i, "Mean_Plot_Biomass_kg_m2"] <- bio_1
-                        final[i, "Mean_Plot_Biomass_kg_ha"] <- bio_2
+                        final[i, "Mean_Plot_Biomass_kg"] <- bio_1
+                        final[i, "Mean_Plot_Biomass_kg_m2"] <- bio_2
                         
                 }
                 
+                beep(8)
                 
                 #NOTE: REMOVING FIRST YEAR OF DRANGEDAL3 DATA (WHERE YSE == 1)
                 #Only "UB" data available in year 1, which doesn't allow for delta calculation
@@ -265,8 +268,8 @@
         #STEP 4 (Delta biomass for each plot) --------
                 
                 #Add placeholder column for delta biomass values
+                final$Delta_Biomass_kg <- as.numeric('')
                 final$Delta_Biomass_kg_m2 <- as.numeric('')
-                final$Delta_Biomass_kg_ha <- as.numeric('')
                 
                 
                 #For each plot, calculate annual delta biomass
@@ -287,15 +290,15 @@
                         #Get current biomass values
                         
                                 #kg/m2
-                                curr_bio_1 <- final[i, "Mean_Plot_Biomass_kg_m2"]
-                                curr_bio_2 <- final[i, "Mean_Plot_Biomass_kg_ha"]
+                                curr_bio_1 <- final[i, "Mean_Plot_Biomass_kg"]
+                                curr_bio_2 <- final[i, "Mean_Plot_Biomass_kg_m2"]
                         
                         #If first year of available data, delta biomass is NA
                         if( yse - min_yr == 0 ){
                                 
                                 #No prior biomass to compute delta biomass with
+                                final[i, "Delta_Biomass_kg"] <- NA
                                 final[i, "Delta_Biomass_kg_m2"] <- NA
-                                final[i, "Delta_Biomass_kg_ha"] <- NA
                                 
                                 
                         } else {
@@ -303,14 +306,14 @@
                                 #Data in Dec of previous year exists - grab this value
                                 
                                         #kg/m2
-                                        prev_bio_1 <- final$Mean_Plot_Biomass_kg_m2[final$Region == reg &
+                                        prev_bio_1 <- final$Mean_Plot_Biomass_kg[final$Region == reg &
                                                                                    final$LocalityName == loc &
                                                                                    final$LocalityCode == plot &
                                                                                    final$Treatment == tr &
                                                                                    final$Years_Since_Exclosure == (yse - 1)][1]
                                 
                                         #kg/ha
-                                        prev_bio_2 <- final$Mean_Plot_Biomass_kg_ha[final$Region == reg &
+                                        prev_bio_2 <- final$Mean_Plot_Biomass_kg_m2[final$Region == reg &
                                                                                             final$LocalityName == loc &
                                                                                             final$LocalityCode == plot &
                                                                                             final$Treatment == tr &
@@ -324,13 +327,14 @@
                                         d_bio_2 <- curr_bio_2 - prev_bio_2
                                 
                                 #Add to df
-                                final[i, "Delta_Biomass_kg_m2"] <- d_bio_1
-                                final[i, "Delta_Biomass_kg_ha"] <- d_bio_2
+                                final[i, "Delta_Biomass_kg"] <- d_bio_1
+                                final[i, "Delta_Biomass_kg_m2"] <- d_bio_2
                                 
                         }
                         
                 }
                 
+                beep(1)
                 
                                 
                                 
@@ -423,6 +427,7 @@
                                 panel.grid.minor = element_blank()
                         ) 
                         
+        
 #END CALCULATE/PLOT MEAN DELTA BIOMASS PER YEAR & TREATMENT ---------------------------------------------------------------------
                         
    

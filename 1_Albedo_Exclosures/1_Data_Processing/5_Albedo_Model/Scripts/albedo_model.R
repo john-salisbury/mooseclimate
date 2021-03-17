@@ -192,7 +192,7 @@
         #Assess multicollinearity between continuous numerical variables ------
         
                 #Grab numerical variables (for "composite" albedo only)
-                numerical <- model_data[model_data$Group == "Composite",c(12,15,17:20)]
+                numerical <- model_data[model_data$Group == "Composite",c(9,11,14,16:19)]
                 
                 #Correlation matrix of numerical variables
                 png(filename = "1_Albedo_Exclosures/1_Data_Processing/5_Albedo_Model/Output/Plots/correlation_matrix.png",
@@ -278,7 +278,7 @@
 #STATISTICAL MODELING --------------------------------------------------------------------------------------
                 
         #Prepare final data for model with selected variables (only "Composite" albedo)
-        final_model_data <- model_data[model_data$Group == "Composite",c(2:5,7,12,14,15,17)]
+        final_model_data <- model_data[model_data$Group == "Composite",c(1:4,6,11,13,14,16)]
         
                 #Save final model data
                 write.csv(final_model_data, "1_Albedo_Exclosures/1_Data_Processing/5_Albedo_Model/Output/albedo_FINAL_model_data.csv")
@@ -287,16 +287,27 @@
         #START HERE:
         final_model_data <- read.csv("1_Albedo_Exclosures/1_Data_Processing/5_Albedo_Model/Output/albedo_FINAL_model_data.csv", header = T)
                 
+                #Treating "Years Since Exclosure" as a factor
+                final_model_data$Years_Since_Exclosure <- as.factor(final_model_data$Years_Since_Exclosure)
+        
         #MODEL A:
                 
-                model_a <- lmer(Albedo ~ Treatment*SWE_mm*Years_Since_Exclosure*Productivity_Index + (1 | Region/LocalityName/LocalityCode), data = final_model_data)
+                model_a <- lmer(Albedo ~ Treatment +
+                                        SWE_mm +
+                                        SWE_mm^2 +
+                                        Years_Since_Exclosure +
+                                        Productivity_Index +
+                                        Treatment*SWE_mm +
+                                        Treatment*Years_Since_Exclosure +
+                                        Treatment*SWE_mm*Years_Since_Exclosure +
+                                        (1 | Region/LocalityName/LocalityCode), data = final_model_data)
                 plot(resid(model_a))
                 summary(model_a)
                 
                 
         #MODEL B:
                 
-                model_b <- lmer(Albedo ~ Moose_Density*SWE_mm*Years_Since_Exclosure*Productivity_Index + (1 | Region/LocalityName/LocalityCode), data = subset(final_model_data, Treatment == "B"))
+                model_b <- lmer(Albedo ~ Moose_Density*SWE_mm*Years_Since_Exclosure + Productivity_Index + (1 | Region/LocalityName/LocalityCode), data = subset(final_model_data, Treatment == "B"))
                 plot(resid(model_b))
                 summary(model_b)
 
