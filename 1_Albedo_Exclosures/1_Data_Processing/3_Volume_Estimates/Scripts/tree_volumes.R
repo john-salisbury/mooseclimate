@@ -12,6 +12,9 @@
         library(tidyr)
         library(ggplot2)
         library(grid)
+        library(cowplot)
+        library(zoo)
+        library(sf)
         library(wesanderson)
         
 ###END PACKAGES ----------------------------------------------------------------------------------------
@@ -70,10 +73,10 @@
                                 #Calculate volume
                                 data$Volume_m3[data$Taxa == "Betula pubescens (Bjørk)" |
                                                        data$Taxa == "Betula pendula (Lavlandbjørk)" |
-                                                       data$Taxa == "Salix caprea (Selje)"] <- (data$Biomass_g[data$Taxa == "Betula pubescens (Bjørk)" |
+                                                       data$Taxa == "Salix caprea (Selje)"] <- (data$Subplot_Total_Biomass_g[data$Taxa == "Betula pubescens (Bjørk)" |
                                                                                                                        data$Taxa == "Betula pendula (Lavlandbjørk)" |
                                                                                                                        data$Taxa == "Salix caprea (Selje)"] / b_density) / 1e06
-                                #Assign group to birch
+                                #Assign group to deciduous
                                 data$Group[data$Taxa == "Betula pubescens (Bjørk)" |
                                                        data$Taxa == "Betula pendula (Lavlandbjørk)" |
                                                        data$Taxa == "Salix caprea (Selje)"] <- "Deciduous"
@@ -83,7 +86,7 @@
                                 
                                 #Calculate volume
                                 data$Volume_m3[data$Taxa == "Picea abies (Gran)" |
-                                                data$Taxa == "Juniperus communis (Einer)"] <- (data$Biomass_g[data$Taxa == "Picea abies (Gran)" |
+                                                data$Taxa == "Juniperus communis (Einer)"] <- (data$Subplot_Total_Biomass_g[data$Taxa == "Picea abies (Gran)" |
                                                                                                                       data$Taxa == "Juniperus communis (Einer)"] / s_density) / 1e06
                                 
                                 #Assign group to spruce
@@ -94,7 +97,7 @@
                         #Pine -------
                                 
                                 #Calculate volume
-                                data$Volume_m3[data$Taxa == "Pinus sylvestris (Furu)"] <- (data$Biomass_g[data$Taxa == "Pinus sylvestris (Furu)"] / p_density) / 1e06
+                                data$Volume_m3[data$Taxa == "Pinus sylvestris (Furu)"] <- (data$Subplot_Total_Biomass_g[data$Taxa == "Pinus sylvestris (Furu)"] / p_density) / 1e06
                                 
                                 #Assign group to pine
                                 data$Group[data$Taxa == "Pinus sylvestris (Furu)"] <- "Pine"
@@ -103,7 +106,7 @@
                         #Rowan (NOTE: using birch-specific density due to lack of rowan-specific density) ------
                                 
                                 #Calculate volume
-                                data$Volume_m3[data$Taxa == "Sorbus aucuparia (Rogn)"] <- (data$Biomass_g[data$Taxa == "Sorbus aucuparia (Rogn)"] / b_density) / 1e06
+                                data$Volume_m3[data$Taxa == "Sorbus aucuparia (Rogn)"] <- (data$Subplot_Total_Biomass_g[data$Taxa == "Sorbus aucuparia (Rogn)"] / b_density) / 1e06
                         
                                 #Assign group
                                 data$Group[data$Taxa == "Sorbus aucuparia (Rogn)"] <- "Deciduous"
@@ -174,8 +177,6 @@
                 
         #Define SE function
         std <- function(x) sd(x)/sqrt(length(x))
-                
-                
                 
         #TOTAL MEAN SUBPLOT VOLUME ------------
                 
@@ -299,6 +300,198 @@
                                 reg_means[i, "SE"] <- se
                         }
                         
+                        
+        #DELTA SUBPLOT VOLUME BY Treatment and GROUP (complex plot clumped by region)
+        #Note: This is a step to troubleshoot the weird albedo estimates we're seeing in Hedmark
+        #The goal is to determine if there are any sites with huge differences in volume of the 3 species
+                
+                #(1) Aggregate means for each PLOT (localityCode)
+                site_means <- aggregate(vol$Volume_m3ha, by = list("LocalityName" = vol$LocalityName,
+                                                                   "Treatment" = vol$Treatment,
+                                                                    "Years_Since_Exclosure" = vol$Years_Since_Exclosure,
+                                                                    "Group" = vol$Group,
+                                                                    "Region" = vol$Region), FUN = mean)
+                colnames(site_means)[6] <- "Average_vol_m3_ha"
+                
+                #(2) For each localityName, calculate delta volume for each species in each year
+                sites <- levels(as.factor(site_means$LocalityName))
+                groups <- levels(as.factor(site_means$Group))
+                
+                #(3) Remove 3DRUB data from year 1 (no matching data in 3DRB)
+                site_means <- site_means[!(site_means$LocalityName == "drangedal3" &
+                                                   site_means$Years_Since_Exclosure == 1 &
+                                                   site_means$Treatment == "UB"),]
+                
+                #(4) Calculate delta vol at each LocalityName
+                
+                        #Create placeholder df
+                        delta_vol <- data.frame("LocalityName" = as.character(),
+                                                "Region" = as.character(),
+                                                "Group" = as.character(),
+                                                "Years_Since_Exclosure" = as.integer(),
+                                                "Delta_Volume" = as.numeric())
+                       
+                        #Loop through each site and calculate delta volume for each group
+                        #NOTE: can't use aggregate(), as this throws an error when a species is present in one plot
+                        #but not another at a given study site
+                        for(i in 1:length(sites)){
+                                
+                                #Get site
+                                site <- sites[i]
+                                
+                                #Get region
+                                reg <- site_means$Region[site_means$LocalityName == site][1]
+                                
+                                #Min and max years
+                                min_year <- min(site_means$Years_Since_Exclosure[site_means$LocalityName == site])
+                                max_year <- max(site_means$Years_Since_Exclosure[site_means$LocalityName == site])
+                                
+                                #Loop through years and calculate delta for each species
+                                for(j in min_year:max_year){
+                                        
+                                        #Loop through each species/group
+                                        for(k in 1:length(groups)){
+                                                
+                                                group <- groups[k]
+                                                
+                                                #Get exclosure volume
+                                                if( length(site_means$Average_vol_m3_ha[site_means$LocalityName == site & site_means$Years_Since_Exclosure == j & site_means$Group == group & site_means$Treatment == "UB"]) > 0 ){
+                                                        excl <- site_means$Average_vol_m3_ha[site_means$LocalityName == site & site_means$Years_Since_Exclosure == j & site_means$Group == group & site_means$Treatment == "UB"]
+                                                } else {
+                                                        
+                                                        #Set volume to 0 if absent
+                                                        excl <- 0
+                                                }
+                                                
+                                                #Get open volume
+                                                if( length(site_means$Average_vol_m3_ha[site_means$LocalityName == site & site_means$Years_Since_Exclosure == j & site_means$Group == group & site_means$Treatment == "B"]) > 0 ){
+                                                        open <- site_means$Average_vol_m3_ha[site_means$LocalityName == site & site_means$Years_Since_Exclosure == j & site_means$Group == group & site_means$Treatment == "B"]
+                                                } else {
+                                                        
+                                                        #Set volume to 0 if absent
+                                                        open <- 0
+                                                }
+                                                
+                                                #Calculate delta
+                                                delta <- excl - open
+                                                
+                                                #Temporary dataframe
+                                                temp <- data.frame("LocalityName" = site,
+                                                                        "Region" = reg,
+                                                                        "Group" = group,
+                                                                        "Years_Since_Exclosure" = j,
+                                                                        "Delta_Volume" = delta)
+                                                
+                                                delta_vol <- rbind(delta_vol, temp)
+                                                
+                                        }
+                                        
+                                }
+                                
+                        }
+                        
+
+                #(5) Generate plots
+                        
+                        #Palette
+                        pal <- wes_palette("Darjeeling1")
+                
+                        #Hedmark
+                        g1 <- ggplot(data = subset(delta_vol, Region == "Hedmark"), aes(x = Years_Since_Exclosure, y = Delta_Volume, color = Group)) +
+                                        geom_point(size = 1) +
+                                        geom_line() +
+                                        ggtitle("Hedmark") +
+                                        labs(x = "Years Since Exclosure", y = "\U0394 Volume " ~(m^3/ha) ~ "  (Excl. - Open)" ) +
+                                        scale_color_manual(values = pal) +
+                                        facet_wrap(~LocalityName, ncol = 5) +
+                                        scale_x_continuous(limits = c(1, 11), breaks = c(2,4,6,8,10)) +
+                                        scale_y_continuous(limits = c(-25,72)) +
+                                        theme_bw() +
+                                        theme(
+                                                legend.position = "none",
+                                                axis.title.x = element_text(margin = margin(t = 4)),
+                                                axis.title.y = element_text(margin = margin(r = 4)),
+                                                plot.title = element_text(hjust = 0.5, face = "bold")
+                                        )
+                        g1
+                        
+                        #Telemark
+                        g2 <- ggplot(data = subset(delta_vol, Region == "Telemark"), aes(x = Years_Since_Exclosure, y = Delta_Volume, color = Group)) +
+                                geom_point(size = 1) +
+                                geom_line() +
+                                ggtitle("Telemark") +
+                                labs(x = "Years Since Exclosure", y = "\U0394 Volume " ~(m^3/ha) ~ "  (Excl. - Open)" ) +
+                                scale_color_manual(values = pal) +
+                                facet_wrap(~LocalityName, ncol = 5) +
+                                scale_x_continuous(limits = c(1, 11), breaks = c(2,4,6,8,10)) +
+                                scale_y_continuous(limits = c(-25,72)) +
+                                theme_bw() +
+                                theme(
+                                        legend.position = "none",
+                                        axis.title.x = element_text(margin = margin(t = 4)),
+                                        axis.title.y = element_text(margin = margin(r = 4)),
+                                        plot.title = element_text(hjust = 0.5, face = "bold")
+                                )
+                        g2
+                        
+                        #Trøndelag
+                        g3 <- ggplot(data = subset(delta_vol, Region == "Trøndelag"), aes(x = Years_Since_Exclosure, y = Delta_Volume, color = Group)) +
+                                geom_point(size = 1) +
+                                geom_line() +
+                                ggtitle("Trøndelag") +
+                                labs(x = "Years Since Exclosure", y = "\U0394 Volume " ~(m^3/ha) ~ "  (Excl. - Open)" ) +
+                                scale_color_manual(values = pal) +
+                                facet_wrap(~LocalityName, ncol = 5) +
+                                scale_x_continuous(limits = c(1, 11), breaks = c(2,4,6,8,10)) +
+                                scale_y_continuous(limits = c(-25,72)) +
+                                theme_bw() +
+                                theme(
+                                        legend.position = "none",
+                                        axis.title.x = element_text(margin = margin(t = 4)),
+                                        axis.title.y = element_text(margin = margin(r = 4)),
+                                        plot.title = element_text(hjust = 0.5, face = "bold")
+                                )
+                        g3
+                        
+                        #Extract legend
+                        extract_legend <- function(my_ggp) {
+                                step1 <- ggplot_gtable(ggplot_build(my_ggp))
+                                step2 <- which(sapply(step1$grobs, function(x) x$name) == "guide-box")
+                                step3 <- step1$grobs[[step2]]
+                                return(step3)
+                        }
+                        
+                        #Additional graph to extract legend from
+                        g1_l <- ggplot(data = subset(delta_vol, Region == "Trøndelag"), aes(x = Years_Since_Exclosure, y = Delta_Volume, color = Group)) +
+                                geom_point(size = 1) +
+                                geom_line() +
+                                ggtitle("Trøndelag") +
+                                labs(x = "Years Since Exclosure", y = "\U0394 Volume " ~(m^3/ha) ~ "  (Excl. - Open)" ) +
+                                scale_color_manual(values = pal) +
+                                facet_wrap(~LocalityName, ncol = 5) +
+                                scale_x_continuous(limits = c(1, 11), breaks = c(2,4,6,8,10)) +
+                                scale_y_continuous(limits = c(-25,30)) +
+                                theme_bw() +
+                                theme(
+                                        legend.position = "bottom",
+                                        plot.title = element_text(hjust = 0.5)
+                                )
+                        
+                        #Extract legend
+                        shared_legend <- extract_legend(g1_l)
+                        
+                        complex <- plot_grid(g1, NULL, g2, NULL, g3, shared_legend, ncol = 1, rel_heights = c(0.23, 0.015, 0.3, 0.015, 0.3, 0.025))
+                        complex
+                        
+                        #Save as SVG
+                        ggsave('delta_volume_by_site.svg',
+                               complex,
+                               "svg",
+                               '1_Albedo_Exclosures/1_Data_Processing/3_Volume_Estimates/Output/Plots',
+                               width = 8,
+                               height = 10,
+                               units = "in",
+                               dpi = "retina")
 
                         
                         
@@ -321,12 +514,18 @@
                 
                 #MEAN SUBPLOT VOLUME (TOTAL VOLUME) BY TREATMENT --------
                         
-                        ggplot(data = tot_means, aes(x = Years_Since_Exclosure, y = Average_vol_m3_ha, group = Treatment)) +
+                        #Treatment nice names
+                        tot_means$TNN[tot_means$Treatment == "B"] <- "Browsed"
+                        tot_means$TNN[tot_means$Treatment == "UB"] <- "Unbrowsed"
+                        
+                        #Plot
+                        ggplot(data = tot_means, aes(x = Years_Since_Exclosure, y = Average_vol_m3_ha, color = TNN, group = TNN)) +
                                 geom_errorbar(aes(ymin = (Average_vol_m3_ha - SE), ymax = (Average_vol_m3_ha + SE)), colour="black", width=0.5, position = position_dodge(0.3)) +
-                                geom_point(aes(shape = Treatment), size = 1.75, position = position_dodge(0.3)) +
-                                geom_line(aes(linetype = Treatment)) +
-                                labs(x = "Years Since Exclosure", y = "Mean Subplot Volume "~(m^3/ha)) +
+                                geom_point(aes(shape = TNN), size = 1.75, position = position_dodge(0.3)) +
+                                geom_line(aes(linetype = TNN)) +
+                                labs(x = "Years Since Exclosure", y = "Volume "~(m^3/ha), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
                                 scale_x_continuous(breaks = c(1,3,5,7,9,11)) +
+                                scale_color_manual(values = pal) +
                                 theme_bw() +
                                 theme(
                                         axis.title.x = element_text(size = 12, margin = margin(t=10)),
@@ -336,13 +535,19 @@
                                 
                 #MEAN SUBPLOT VOLUME BY GROUP & TREATMENT -------
                         
-                        ggplot(data = group_means, aes(x = Years_Since_Exclosure, y = Average_vol_m3_ha, group = Treatment)) +
+                        #Treatment nice names
+                        group_means$TNN[group_means$Treatment == "B"] <- "Browsed"
+                        group_means$TNN[group_means$Treatment == "UB"] <- "Unbrowsed"
+                        
+                        #Plot
+                        ggplot(data = group_means, aes(x = Years_Since_Exclosure, y = Average_vol_m3_ha, color = TNN, group = TNN)) +
                                 geom_errorbar(aes(ymin = (Average_vol_m3_ha - SE), ymax = (Average_vol_m3_ha + SE)), colour="black", width=0.5, position = position_dodge(0.3)) +
-                                geom_point(aes(shape = Treatment), size = 1.75, position = position_dodge(0.3)) +
-                                geom_line(aes(linetype = Treatment)) +
+                                geom_point(aes(shape = TNN), size = 1.75, position = position_dodge(0.3)) +
+                                geom_line(aes(linetype = TNN)) +
                                 facet_wrap(~Group, nrow = 3) +
-                                labs(x = "Years Since Exclosure", y = "Mean Subplot Volume "~(m^3/ha)) +
+                                labs(x = "Years Since Exclosure", y = "Volume "~(m^3/ha), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
                                 scale_x_continuous(breaks = c(1,3,5,7,9,11)) +
+                                scale_color_manual(values = pal) +
                                 theme_bw() +
                                 theme(
                                         axis.title.x = element_text(size = 12, margin = margin(t=10)),
@@ -351,30 +556,41 @@
                         
                         
                 #MEAN SUBPLOT VOLUME BY REGION & TREATMENT -------
-                
-                ggplot(data = tot_reg_means, aes(x = Years_Since_Exclosure, y = Average_vol_m3_ha, group = Treatment)) +
-                        geom_errorbar(aes(ymin = (Average_vol_m3_ha - SE), ymax = (Average_vol_m3_ha + SE)), colour="black", width=0.5, position = position_dodge(0.3)) +
-                        geom_point(aes(shape = Treatment), size = 1.75, position = position_dodge(0.3)) +
-                        geom_line(aes(linetype = Treatment)) +
-                        facet_wrap(~Region, ncol = 1) +
-                        labs(x = "Years Since Exclosure", y = "Mean Subplot Volume "~(m^3/ha)) +
-                        scale_x_continuous(breaks = c(1,3,5,7,9,11)) +
-                        theme_bw() +
-                        theme(
-                                axis.title.x = element_text(size = 12, margin = margin(t=10)),
-                                axis.title.y = element_text(size = 12, margin = margin(r=10))
-                        )
                         
+                        #Treatment nice names
+                        tot_reg_means$TNN[tot_reg_means$Treatment == "B"] <- "Browsed"
+                        tot_reg_means$TNN[tot_reg_means$Treatment == "UB"] <- "Unbrowsed"
+                
+                        #Plot
+                        ggplot(data = tot_reg_means, aes(x = Years_Since_Exclosure, y = Average_vol_m3_ha, color = TNN, group = TNN)) +
+                                geom_errorbar(aes(ymin = (Average_vol_m3_ha - SE), ymax = (Average_vol_m3_ha + SE)), colour="black", width=0.5, position = position_dodge(0.3)) +
+                                geom_point(aes(shape = TNN), size = 1.75, position = position_dodge(0.3)) +
+                                geom_line(aes(linetype = TNN)) +
+                                facet_wrap(~Region, ncol = 1) +
+                                labs(x = "Years Since Exclosure", y = "Volume "~(m^3/ha), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
+                                scale_x_continuous(breaks = c(1,3,5,7,9,11)) +
+                                scale_color_manual(values = pal) +
+                                theme_bw() +
+                                theme(
+                                        axis.title.x = element_text(size = 12, margin = margin(t=10)),
+                                        axis.title.y = element_text(size = 12, margin = margin(r=10))
+                                )
+                                
                         
                 #MEAN SUBPLOT VOLUME BY GROUP, REGION, & TREATMENT -------
                         
-                        ggplot(data = reg_means, aes(x = Years_Since_Exclosure, y = Average_vol_m3_ha, group = Treatment)) +
+                        #Treatment nice names
+                        reg_means$TNN[reg_means$Treatment == "B"] <- "Browsed"
+                        reg_means$TNN[reg_means$Treatment == "UB"] <- "Unbrowsed"
+                        
+                        ggplot(data = reg_means, aes(x = Years_Since_Exclosure, y = Average_vol_m3_ha, color = TNN, group = TNN)) +
                                 geom_errorbar(aes(ymin = (Average_vol_m3_ha - SE), ymax = (Average_vol_m3_ha + SE)), colour="black", width=0.5, position = position_dodge(0.3)) +
-                                geom_point(aes(shape = Treatment), size = 1.75, position = position_dodge(0.3)) +
-                                geom_line(aes(linetype = Treatment)) +
+                                geom_point(aes(shape = TNN), size = 1.75, position = position_dodge(0.3)) +
+                                geom_line(aes(linetype = TNN)) +
                                 facet_grid(Region~Group) +
-                                labs(x = "Years Since Exclosure", y = "Mean Subplot Volume "~(m^3/ha)) +
+                                labs(x = "Years Since Exclosure", y = "Volume "~(m^3/ha), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
                                 scale_x_continuous(breaks = c(1,3,5,7,9,11)) +
+                                scale_color_manual(values = pal) +
                                 theme_bw() +
                                 theme(
                                         axis.title.x = element_text(size = 12, margin = margin(t=10)),
