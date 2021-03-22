@@ -17,6 +17,7 @@
         library(beepr)
         library(GGally)
         library(lattice)
+        library(sjPlot)
 
         
 ###END PACKAGES ----------------------------------------------------------------------------------------
@@ -356,7 +357,7 @@
      
         #Going to investigate using an LMM
         
-        #MODEL 1A:
+        #MODEL A:
 
                 #Model form
                 model_a <- lmer(Plot_Albedo ~ Treatment +
@@ -428,66 +429,96 @@
                                 
                         #Key point - snow prop is the problematic factor - how do I handle this?
                                 
+        
                                 
-        #Let's explore snow vs albedo a bit more
-                                
-                #Snow vs albedo
-                ggplot(data = model_data, aes(x = Snow_Prop, y = Plot_Albedo)) +
-                        geom_point(shape = 1) +
-                        geom_smooth(method = lm) +
-                        theme_bw() +
-                        labs(x = "Monthly Avg. Proportion of Days w/ Snow", y = "Albedo") +
-                        theme(
-                                axis.title.x = element_text(margin = margin(t = 6), size = 14),
-                                axis.title.y = element_text(margin = margin(r = 6), size = 14),
-                                axis.text.x = element_text(angle = 90, hjust = 1)
-                        )
-                
-                #Transformed
-                ggplot(data = model_data, aes(x = sqrt(Snow_Prop), y = Plot_Albedo)) +
-                        geom_point(shape = 1) +
-                        geom_smooth(method = lm) +
-                        theme_bw() +
-                        labs(x = "Monthly Avg. Proportion of Days w/ Snow", y = "Albedo") +
-                        theme(
-                                axis.title.x = element_text(margin = margin(t = 6), size = 14),
-                                axis.title.y = element_text(margin = margin(r = 6), size = 14),
-                                axis.text.x = element_text(angle = 90, hjust = 1)
-                        )
-
-                                
-                                
+                #Let's explore snow vs albedo a bit more
+                                        
+                        #Snow vs albedo
+                        ggplot(data = model_data, aes(x = Snow_Prop, y = Plot_Albedo)) +
+                                geom_point(shape = 1) +
+                                geom_smooth(method = lm) +
+                                theme_bw() +
+                                labs(x = "Monthly Avg. Proportion of Days w/ Snow", y = "Albedo") +
+                                theme(
+                                        axis.title.x = element_text(margin = margin(t = 6), size = 14),
+                                        axis.title.y = element_text(margin = margin(r = 6), size = 14),
+                                        axis.text.x = element_text(angle = 90, hjust = 1)
+                                )
                         
-#END MODEL A: LMM --------------------------------------------------------------------------------------
-
+                        #Transformed
+                        ggplot(data = model_data, aes(x = (Snow_Prop^2), y = Plot_Albedo)) +
+                                geom_point(shape = 1) +
+                                geom_smooth(method = lm) +
+                                theme_bw() +
+                                labs(x = "(Monthly Avg. Proportion of Days w/ Snow)^2", y = "Albedo") +
+                                theme(
+                                        axis.title.x = element_text(margin = margin(t = 6), size = 14),
+                                        axis.title.y = element_text(margin = margin(r = 6), size = 14),
+                                        axis.text.x = element_text(angle = 90, hjust = 1)
+                                )
+                        
+        
+                #Save parameter estimates as table
+                tab_model(model_a, digits = 4)
                 
-        #MODEL B:
                 
-                model_b <- lmer(log(Albedo) ~ Moose_Density +
-                                        sqrt(SWE_mm) +
+                
+        #MODEL B: Include (snow)^2
+                
+                #Model form
+                model_b <- lmer(Plot_Albedo ~ Treatment +
                                         Years_Since_Exclosure +
+                                        Snow_Prop +
+                                        I(Snow_Prop^2) +
                                         Productivity_Index +
-                                        Moose_Density*Years_Since_Exclosure +
-                                        Moose_Density*sqrt(SWE_mm) +
-                                        (1 | Region), data = subset(model_data, Treatment == "B"))
+                                        Region +
+                                        Treatment*Years_Since_Exclosure +
+                                        Treatment*Snow_Prop +
+                                        Treatment*I(Snow_Prop^2) +
+                                        Treatment*Region +
+                                        (1 | LocalityName), data = model_data)
                 
-                #Look at residuals
-                hist(resid(model_b))
-                qqnorm(resid(model_b))
-                qqline(resid(model_b))
-                plot(model_b)
-                summary(model_b)
+                #Assess assumptions of LMM
                 
-                        #Residuals also don't look great
+                        #(1) Linearity of relationship between response and predictor
+                        plot(model_b, type = c("p", "smooth"))
+                        
+                        #Residuals look slightly better
+                        
+                        #(2) Linearity of relationship between response and predictor (within treatment)
+                        plot(model_b, resid(., scaled=TRUE) ~ fitted(.) | Treatment,
+                             abline = 0, type = c("p", "smooth"), layout = c(2,1))
+                        
+                        #Strange residual plots within both treatments
+                        
+                        #(3) Linearity of relationship between response and predictor (within LocalityName)
+                        plot(model_b, resid(., scaled=TRUE) ~ fitted(.) | LocalityName)
+                        
+                        #Strange residual plots at every site
+                        
+                        #(4) Homogeneity of residual variance
+                        plot(model_b, sqrt(abs(resid(., scaled=TRUE))) ~ fitted(.),
+                             type = c("p", "smooth"))
+                        
+                        #Looks horrible
+                        
+                        #(5) Within-group errors are independent with normal distribution
+                        qqmath(model_b) #Not straight
+                        hist(resid(model_b)) #Looks slightly normal?
+                        
+                #Generate model table
+                tab_model(model_b, digits = 4)
+                        
+                plot(Plot_Albedo~I(Snow_Prop^2), data = model_data)
                 
                 
-        #SUMMARY OF TWO MODELS:
-                
-                # Both models have similar residual plots and don't look great - I'm going to 
-                # try James's suggestion and use proportion of days with snow in place of SWE
-                # to see if that helps reduce weird trends
-
         
-#END MODEL B -----------------------------------------------------------------------------------
-        
-
+                
+        #AIC Comparison of two models:
+                
+                #Run classical AIC w/ penalty = 2
+                AIC(model_a, model_b)
+                
+#END MODEL A: LMM --------------------------------------------------------------------------------------
+                
+                
