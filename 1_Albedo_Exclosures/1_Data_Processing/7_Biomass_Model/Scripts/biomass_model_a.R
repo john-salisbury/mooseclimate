@@ -2,8 +2,7 @@
 
 ## Model A - Effect of presence/bbsence of moose, for:
 
-        ## Total biomass (kg/m2)
-        ## Total species-specific biomass (kg/m2)
+        ## Total biomass (kg/m2) at the plot level
 
 
 ##PACKAGES ----------------------------------------------------------------------------------------
@@ -92,14 +91,11 @@
                         productivity$LocalityName[productivity$LocalityName == "truls holm"] <- "truls_holm"
         
        
-        #Biomass
+        #Biomass (total biomass)
                 
                 #Import biomass CSVs (total and species-specific)
                 total_bio <- read.csv("1_Albedo_Exclosures/1_Data_Processing/2_Biomass_Estimates/Output/plot_biomass.csv", header = T)
-                decid_bio <- read.csv("1_Albedo_Exclosures/1_Data_Processing/2_Biomass_Estimates/Output/plot_decid_biomass.csv", header = T)
-                pine_bio <- read.csv("1_Albedo_Exclosures/1_Data_Processing/2_Biomass_Estimates/Output/plot_pine_biomass.csv", header = T)
-                spruce_bio <- read.csv("1_Albedo_Exclosures/1_Data_Processing/2_Biomass_Estimates/Output/plot_spruce_biomass.csv", header = T)
-                
+               
                 
 #END INITIAL DATA IMPORT --------------------------------------------------------------------------------
         
@@ -118,57 +114,7 @@
                 #Make a copy of albedo data (using 'total biomass' df as a base)
                 model_data <- total_bio
                 
-                #Add plot species-specific biomass values
-                
-                        #Placeholder columns
-                        model_data$Mean_Plot_Decid_Biomass_kg_m2 <- as.numeric('')
-                        model_data$Mean_Plot_Pine_Biomass_kg_m2 <- as.numeric('')
-                        model_data$Mean_Plot_Spruce_Biomass_kg_m2 <- as.numeric('')
-                        
-                        #Loop through
-                        for(i in 1:nrow(model_data)){
-                                
-                                print(i)
-                                
-                                #Get variables
-                                loc <- model_data[i, "LocalityCode"]
-                                yr <- model_data[i, "Years_Since_Exclosure"]
-                                
-                                #Get corresponding species-specific biomass values
-                                #Error catch for missing values
-                                
-                                        #Deciduous
-                                        d_bio <- decid_bio$Mean_Plot_Decid_Biomass_kg_m2[decid_bio$LocalityCode == loc &
-                                                                                                 decid_bio$Years_Since_Exclosure == yr]
-                                        if(length(d_bio) == 0){
-                                                d_bio <- 0
-                                        }
-                                        
-                                        #Pine
-                                        p_bio <- pine_bio$Mean_Plot_Pine_Biomass_kg_m2[pine_bio$LocalityCode == loc &
-                                                                                                 pine_bio$Years_Since_Exclosure == yr]
-                                        
-                                        if(length(p_bio) == 0){
-                                                p_bio <- 0
-                                        }
-                                        
-                                        #Spruce
-                                        s_bio <- spruce_bio$Mean_Plot_Spruce_Biomass_kg_m2[spruce_bio$LocalityCode == loc &
-                                                                                                 spruce_bio$Years_Since_Exclosure == yr]
-                                        
-                                        if(length(s_bio) == 0){
-                                                s_bio <- 0
-                                        }
-                                        
-                                #Add to df
-                                model_data[i, "Mean_Plot_Decid_Biomass_kg_m2"] <- d_bio
-                                model_data[i, "Mean_Plot_Pine_Biomass_kg_m2"] <- p_bio
-                                model_data[i, "Mean_Plot_Spruce_Biomass_kg_m2"] <- s_bio
-                                        
-                                
-                        }
-                        
-                
+        
                 #Add productivity index data ---
                 
                         #Placeholder column
@@ -241,7 +187,7 @@
         #Assess multicollinearity between continuous numerical variables ------
         
                 #Grab numerical variables (for "composite" albedo only)
-                numerical <- model_data[,c(6,12,14:16)]
+                numerical <- model_data[,c(6,9,11:13)]
                 
                 #Correlation matrix of numerical variables
                 png(filename = "1_Albedo_Exclosures/1_Data_Processing/7_Biomass_Model/Output/Plots/correlation_matrix.png",
@@ -287,26 +233,6 @@
                                 #Treatment*Years_Since_Exclosure
                                 #Treatment*Region
                 
-                        #Random Effects:
-                                #LocalityName
-
-                
-                
-                #Model B (Moose Density (only looking at open plots))
-                
-                        #Data:
-                                #Only exclosures
-                
-                        #Fixed Effects:
-                                #Moose Density
-                                #Years_Since_Exclosure
-                                #Productivity Index
-                                #Region
-                
-                        #Interactions
-                                #Moose Density*Years_Since_Exclosure
-                                #Treatment*Region
-                        
                         #Random Effects:
                                 #LocalityName
 
@@ -528,170 +454,3 @@
 
         
 #END TOTAL BIOMASS MODEL --------------------------------------------------------------------------------------
-                
-                
-                
-                
-#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-
-
-
-                
-#DECIDUOUS BIOMASS MODEL --------------------------------------------------------------------------------------                
-  
-        #STEP 1: Define the most interesting model ---------
-                
-                #Define model
-                model_b <- lmer(Mean_Plot_Decid_Biomass_kg_m2 ~ Treatment +
-                                        Years_Since_Exclosure +
-                                        Productivity_Index +
-                                        Region +
-                                        Treatment*Years_Since_Exclosure +
-                                        Treatment*Region +
-                                        (1 | LocalityName),
-                                data = model_data)
-                
-                #Quick check of residuals
-                plot(model_b) #Heteroskedasticity (same as before)
-                hist(resid(model_b)) #Weird distribution of residuals
-                qqmath(resid(model_b)) #Looks terrible
-                
-                #Let's investigate residuals vs explanatory variables for trends
-                plot(resid(model_b) ~ model_data$Years_Since_Exclosure) #Looks relatively linear 
-                plot(resid(model_b) ~ model_data$Productivity_Index) #No clear trends
-                
-                ##KEY POINT: without any transformations, model has normally distributed residuals but heteroskedasticity
-                ##Some type of transformation is necessary
-                
-                
-        #STEP 2: Transform model to address heteroskedasticity --------
-                
-                #Try a log-transformation
-                subset_decid <- model_data[model_data$Mean_Plot_Decid_Biomass_kg_m2 > 0,]
-                model_b1 <- lmer(log(Mean_Plot_Decid_Biomass_kg_m2) ~ Treatment +
-                                         Years_Since_Exclosure +
-                                         Productivity_Index +
-                                         Region +
-                                         Moose_Density +
-                                         Treatment*Years_Since_Exclosure +
-                                         Treatment*Region +
-                                         (1 | LocalityName),
-                                 data = subset_decid)
-                
-                summary(model_b1)
-                
-                #Quick check of residuals
-                plot(model_b1) #Looks much more homoskedastic, but still slightly heteroskedastic
-                hist(resid(model_b1)) #Normally distributed residuals
-                
-                qqnorm(resid(model_b1)) #Looks OK, not great
-                
-                
-        #STEP 3: Investigate Heteroskedasticity  ---------
-                
-                #Plot model residuals vs explanatory variables
-                plot(resid(model_b1) ~ subset_decid$Years_Since_Exclosure) #Looks linear
-                plot(resid(model_b1) ~ subset_decid$Productivity_Index) #No idea
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-        #STEP 3: Compare nested models with AIC ---------
-                
-                #Re-fit model from Step 2 w/ ML (for comparison of fixed effects)
-                model_a1 <- lmer(log(Mean_Plot_Biomass_kg_m2) ~ Treatment +
-                                         Years_Since_Exclosure +
-                                         Productivity_Index +
-                                         Region +
-                                         Treatment*Years_Since_Exclosure +
-                                         Treatment*Region +
-                                         (1 | LocalityName),
-                                 data = model_data,
-                                 REML = F)
-                
-                summary(model_a1) 
-                
-                #Nested model without Productivity Index
-                
-                #Model A2
-                model_a2 <- lmer(log(Mean_Plot_Biomass_kg_m2) ~ Treatment +
-                                         Years_Since_Exclosure +
-                                         Region +
-                                         Treatment*Years_Since_Exclosure +
-                                         Treatment*Region +
-                                         (1 | LocalityName),
-                                 data = model_data,
-                                 REML = F)
-                
-                #Investigate summary
-                summary(model_a2) #Looks similar
-                
-                #Quick check of residual plots
-                plot(model_a2) #Looks very similar
-                hist(resid(model_a2)) #Relatively ormally distributed residuals
-                qqnorm(resid(model_a2)) #Looks great
-                
-                
-                #Simple model version w/ temporal correlation structure (using nlme)
-                library(nlme)
-                model_a_temp <- lme(log(Mean_Plot_Biomass_kg_m2) ~ Treatment +
-                                            Years_Since_Exclosure +
-                                            Productivity_Index +
-                                            Region +
-                                            Treatment*Years_Since_Exclosure +
-                                            Treatment*Region,
-                                    random = ~1 | LocalityName,
-                                    data = model_data,
-                                    correlation = corCompSymm(form =~ Years_Since_Exclosure | LocalityName),
-                                    method = "ML")
-                
-                plot(model_a_temp)
-                
-                #Summarize
-                summary(model_a_temp)
-                
-                
-                #STEP 4: AIC comparison of three models -----------
-                
-                AIC(model_a1, model_a2, model_a_temp) 
-                
-                #Model A1 has the lowest AIC value (may indicate that keeping productivity index improved
-                #fit quite a bit)
-                
-                
-                
-                #STEP 5: Re-run model with REML for most accurate parameter estimates --------
-                
-                final_model_a <- lmer(log(Mean_Plot_Biomass_kg_m2) ~ Treatment +
-                                              Years_Since_Exclosure +
-                                              Productivity_Index +
-                                              Region +
-                                              Treatment*Years_Since_Exclosure +
-                                              Treatment*Region +
-                                              (1 | LocalityName),
-                                      data = model_data,
-                                      REML = T)
-                
-                
-                              
-#DECIDUOUS BIOMASS MODEL --------------------------------------------------------------------------------------                
-                
-                
-                
-                
