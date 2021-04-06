@@ -14,10 +14,12 @@
         library(zoo)
         library(lme4)
         library(lmerTest)
+        library(nlme)
         library(beepr)
         library(GGally)
         library(lattice)
         library(sjPlot)
+        library(mgcv)
 
         
 ###END PACKAGES ----------------------------------------------------------------------------------------
@@ -341,7 +343,8 @@
                 
                         #Log transformation doesn't help (sqrt transformation doesn't help either)
                 
-                        #This might indicate that a GLMM is necessary (to handle proportion data)
+
+
         
 #END EXPLORATORY DIAGNOSTIC PLOTS -----------------------------------------------------------------------------------
         
@@ -353,56 +356,117 @@
 
 
 
-#MODEL 1: LMM --------------------------------------------------------------------------------------
+#MODEL A --------------------------------------------------------------------------------------
      
         #Going to investigate using an LMM
+        #Ref: Zuur et al. (2009)
         
-        #MODEL A:
-
-                #Model form
-                model_a <- lmer(Plot_Albedo ~ Treatment +
-                                        Years_Since_Exclosure +
-                                        Snow_Prop +
-                                        Productivity_Index +
-                                        Region +
-                                        Treatment*Years_Since_Exclosure +
-                                        Treatment*Snow_Prop +
-                                        Treatment*Region +
-                                        (1 | LocalityName), data = model_data)
+        #STEP 1: Beyond optimal model w/ ML
                 
+                #Model form (FIT WITH REML TO ALLOW COMPARISON OF RANDOM STRUCTURE)
+                m1 <- lmer(Plot_Albedo ~ Treatment*Years_Since_Exclosure*Snow_Prop*Productivity_Index*Region +
+                                (1 | LocalityName), data = model_data, REML = F)
+                
+                        #Residuals check
+                        plot(m1)
+                        
+                                #Very bad heteroskedasticity - need to try some transformations
+                        
+                
+                
+        #STEP 2: Transform 'beyond optimal' model to address heteroskedasticity --------
+                
+                #Log-transformation of outcome
+                m1_trans <- lmer(log(Plot_Albedo) ~ Treatment*Years_Since_Exclosure*Snow_Prop*Productivity_Index*Region +
+                                         (1 | LocalityName), data = model_data, REML = F)
+                        
+                        #Residuals check
+                        plot(m1_trans) #Still not great
+                        
+                        
+                #Add polynomial term for snow_prop (which is not linear)
+                m1_trans <- lmer(Plot_Albedo ~ Treatment*Years_Since_Exclosure*Snow_Prop*I(Snow_Prop^2)*Productivity_Index*Region +
+                                         (1 | LocalityName), data = model_data, REML = F)
+                
+                        #Residuals check
+                        plot(m1_trans) #Slightly better
+                        
+                
+                #Add log-transformation and polynomial for snow_prop
+                m1_trans <- lmer(log(Plot_Albedo) ~ Treatment*Years_Since_Exclosure*Snow_Prop*I(Snow_Prop^2)*Productivity_Index*Region +
+                                         (1 | LocalityName), data = model_data, REML = F)
+                
+                        #Residuals check
+                        plot(m1_trans) #Slightly better
+                
+                
+                
+        
+                
+                
+#END MODEL A --------------------------------------------------------------------------------------
+                
+                
+                
+        model_data$Snow_Level[model_data$Snow_Prop > 0.5] <- "High"
+        model_data$Snow_Level[model_data$Snow_Prop <= 0.5] <- "Low"
+        
+        model_data$Month <- as.factor(model_data$Month)
+
+#ONE BELOW HAD GREAT RESIDUALS - GO WITH THIS
+        m2 <- lmer(log(Plot_Albedo) ~ Treatment*Years_Since_Exclosure*Snow_Prop*I(Snow_Prop^2)*I(Snow_Prop^3)*Productivity_Index*Region*Avg_Decid_Prop +
+                           (1 | LocalityName) + (1 | Month),
+                   data = model_data)
+        
+        m2 <- lmer(Plot_Albedo ~ Treatment*Years_Since_Exclosure +
+                           Snow_Prop +
+                           I(Snow_Prop^2) +
+                           I(Snow_Prop^3) +
+                           I(Snow_Prop^4) +
+                           Productivity_Index +
+                           Region +
+                           Avg_Decid_Prop +
+                           (1 | LocalityName) + (1 | Month),
+                   data = model_data)
+        
+        plot(m2)
+        summary(m2)            
+                        
+                        
+
                 #Assess assumptions of LMM
         
                         #(1) Linearity of relationship between response and predictor
-                        plot(model_a, type = c("p", "smooth"))
+                        plot(m2, type = c("p", "smooth"))
                         
                                 #Strange residual plot
                 
                         #(2) Linearity of relationship between response and predictor (within treatment)
-                        plot(model_a, resid(., scaled=TRUE) ~ fitted(.) | Treatment,
+                        plot(m2, resid(., scaled=TRUE) ~ fitted(.) | Treatment,
                              abline = 0, type = c("p", "smooth"), layout = c(2,1))
                         
                                 #Strange residual plots within both treatments
                         
                         #(3) Linearity of relationship between response and predictor (within LocalityName)
-                        plot(model_a, resid(., scaled=TRUE) ~ fitted(.) | LocalityName)
+                        plot(m2, resid(., scaled=TRUE) ~ fitted(.) | LocalityName)
                         
                                 #Strange residual plots at every site
                         
                         #(4) Homogeneity of residual variance
-                        plot(model_a, sqrt(abs(resid(., scaled=TRUE))) ~ fitted(.),
+                        plot(m2, sqrt(abs(resid(., scaled=TRUE))) ~ fitted(.),
                              type = c("p", "smooth"))
                         
                                 #Looks horrible
                         
                         #(5) Within-group errors are independent with normal distribution
-                        qqmath(model_a) #Not straight
-                        hist(resid(model_a)) #Looks slightly normal?
+                        qqmath(resid(m2)) #Not straight
+                        hist(resid(m2)) #Looks slightly normal?
                         
 
                         #Plot predictors vs residuals
                         
                                 #Years_Since_Exclosure
-                                df <- data.frame(x = model_data$Years_Since_Exclosure, y = resid(model_a))
+                                df <- data.frame(x = model_data$Years_Since_Exclosure, y = resid(m1))
                                 ggplot(data = df, aes(x = x, y = y)) +
                                         geom_point(shape = 1)
                                 
@@ -410,7 +474,7 @@
                                 
                                 
                                 #Snow prop
-                                df <- data.frame(x = model_data$Snow_Prop, y = resid(model_a))
+                                df <- data.frame(x = model_data$Snow_Prop, y = resid(m1))
                                 ggplot(data = df, aes(x = x, y = y)) +
                                         geom_point(shape = 1) +
                                         labs(x = "Monthly Avg. Proportion of Days w/ Snow", y = "Model A Residuals") +
@@ -420,7 +484,7 @@
                                         #in residual plots)
                                 
                                 #Productivity Index
-                                df <- data.frame(x = model_data$Productivity_Index, y = resid(model_a))
+                                df <- data.frame(x = model_data$Productivity_Index, y = resid(m1))
                                 ggplot(data = df, aes(x = x, y = y)) +
                                         geom_point()
                                 
@@ -446,7 +510,7 @@
                                 )
                         
                         #Transformed
-                        ggplot(data = model_data, aes(x = (Snow_Prop^2), y = Plot_Albedo)) +
+                        ggplot(data = model_data, aes(x = I(Snow_Prop^2), y = Plot_Albedo)) +
                                 geom_point(shape = 1) +
                                 geom_smooth(method = lm) +
                                 theme_bw() +
@@ -459,14 +523,195 @@
                         
         
                 #Save parameter estimates as table
-                tab_model(model_a, digits = 4)
+                tab_model(m1, digits = 4)
                 
                 
                 
+                
+                
+#TRY MODEL WITH SWE INSTEAD OF SNOW PROP ---------------
+                
+                #Load SWE
+                clim <- read.csv('1_Albedo_Exclosures/z_Data_Library/SeNorge_Climate_Data/Averages/average_climate_data_by_site.csv', header = T)
+                
+                model_data$SWE_mm <- as.numeric('')
+                
+                #Add SWE to model data
+                for(i in 1:nrow(model_data)){
+                        loc <- model_data[i, "LocalityName"]
+                        mt <- model_data[i, "Month"]
+
+                        swe <- clim$SWE_mm[clim$LocalityName == loc & clim$Month == mt]
+                        
+                        model_data[i, "SWE_mm"] <- swe
+
+                }
+                
+                
+                #Plot transformations of SWE vs albedo
+                plot(model_data$Plot_Albedo ~ model_data$SWE_mm) #logistic
+                plot(model_data$Plot_Albedo ~ log(model_data$SWE_mm)) #Worse
+                plot(model_data$Plot_Albedo ~ sqrt(model_data$SWE_mm)) #Still nonlinear
+                plot(log(model_data$Plot_Albedo) ~ I(model_data$SWE_mm^2)) #Much worse
+                plot(log(model_data$Plot_Albedo) ~ model_data$SWE_mm) #Same (still bad)
+
+                
+                        #SWE DOES NOT WORK WELL IN MIXED EFFECTS MODEL (IMPOSSIBLE TO GET LINEAR TRANSFORMATION)
+                        #SNOW PROP SEEMS TO BE BETTER COVARIATE
+                
+                
+#TRY ADDING TREE PROPORTIONS (DECIDUOUS PROP, IN PARTICULAR) ---------------------
+        
+        props <- read.csv('1_Albedo_Exclosures/z_Data_Library/Tree_Data/Usable_Data/tree_species_proportions_subplot_level.csv', header = T)
+        
+                #Isolate one year 
+                test <- props[props$Year == 2009,]
+                #Are props correlated?
+                cor.test(test$Prop_spruce, test$Prop_birch) #Strongly correlated
+                
+        #Only calc plot-level avg. of deciduous prop
+        plot_props <- aggregate(props$Prop_birch, by = list("LocalityName" = props$LocalityName,
+                                                            "LocalityCode" = props$LocalityCode,
+                                                            "Year" = props$Year), FUN = mean)
+        colnames(plot_props)[4] <- "Avg_Decid_Prop"
+                 
+        #Add to model data
+        model_data$Avg_Decid_Prop <- as.numeric('')
+        for(i in 1:nrow(model_data)){
+                
+                #Variables
+                loc <- model_data[i, "LocalityCode"]
+                yse <- model_data[i, "Years_Since_Exclosure"]
+                
+                #Translate YSE to Year for site loc
+                yr <- site_data$Year.initiated[site_data$LocalityCode == loc] + yse
+                
+                #Grab prop
+                p <-plot_props$Avg_Decid_Prop[plot_props$LocalityCode == loc & plot_props$Year == yr]
+                
+                #Add to model data
+                model_data[i, "Avg_Decid_Prop"] <- p
+                
+                
+        }
+        
+
+        #Try model
+        m2 <- lmer(log(Plot_Albedo) ~ Treatment*Years_Since_Exclosure*Snow_Prop*I(Snow_Prop^2)*Productivity_Index*Avg_Decid_Prop*Month +
+                           (1 | LocalityName), data = model_data, REML = T)
+        
+                plot(m2)
+        
+        model_data$Month <- as.factor(model_data$Month)
+        m2 <- lme(Plot_Albedo ~ Treatment +
+                          Years_Since_Exclosure +
+                          Month +
+                          Snow_Prop +
+                          I(Snow_Prop^2) +
+                          Productivity_Index +
+                          Region +
+                          Treatment*Years_Since_Exclosure +
+                          Treatment*Month +
+                          Month*Years_Since_Exclosure,
+                    random = ~1 | LocalityName,
+                    data = model_data,
+                    correlation = corCompSymm(form =~ Years_Since_Exclosure | LocalityName), method = "ML")
+        
+        plot(m2)
+        summary(m2)
+        
+                #DID NOT HELP
+        
+
+        
+        
+        
+                
+                
+                
+        #KEY FINDINGS FROM MODEL #1 - SNOW PROP HAS A NON-LINEAR RELATIONSHIP WITH ALBEDO 
+        
+                #NEXT STEP - TRY TRANSFORMATIONS
+                
+                        #Which transformation is appropriate?
+                        plot(model_data$Plot_Albedo ~ model_data$Snow_Prop) #Not linear
+                        plot(model_data$Plot_Albedo ~ I(model_data$Snow_Prop^2)) #Somewhat linear
+                        plot(model_data$Plot_Albedo ~ I(model_data$Snow_Prop^3)) #Not as good as I^2
+                        plot(model_data$Plot_Albedo ~ log(model_data$Snow_Prop)) #Terrible
+                        plot(log(model_data$Plot_Albedo) ~ model_data$Snow_Prop) #Reasonable?
+                        
+                        
+                        #TRY LOG TRANSFORMATION OF ALBEDO IN 'BEYOND OPTIMAL' MODEL
+                        
+                                #Model form (FIT WITH REML TO ALLOW COMPARISON OF RANDOM STRUCTURE)
+                                m2 <- lmer(Plot_Albedo ~ Treatment*Years_Since_Exclosure*Snow_Prop*I(Snow_Prop^2)*Productivity_Index +
+                                                   (1 | LocalityName), data = model_data, REML = T)
+                                
+                                
+                                #Assess assumptions of LMM
+                                
+                                #(1) Linearity of relationship between response and predictor
+                                plot(m2, type = c("p", "smooth"))
+                                summary(m2)
+                                
+                                
+                        
+                        
+        #WHAT MISSING VARIABLE COULD BETTER ACCOUNT FOR VARIATION IN ALBEDO
+                
+                #HIGH VARIATION AT MODERATE & HIGH SNOW, LOW VARIATION AT LOW SNOW (Which makes sense)
+                        
+                        #INCLUDING avg. PROPORTION of deciduous trees could help with variation
+                                
+                                
+                                
+                                
+                m3 <- lme(Plot_Albedo ~ Treatment*Years_Since_Exclosure*Productivity_Index*Region,
+                          random = ~ 1|LocalityName,
+                          correlation = corCompSymm(form = ~Years_Since_Exclosure|LocalityName),
+                          data = model_data)
+         
+                plot(m3, type = c("p", "smooth"))
+                
+                plot(model_data$Plot_Albedo ~ model_data$Avg_Decid_Prop)
+                plot(model_data$Plot_Albedo ~ model_data$Productivity_Index)
+                
+
+                
+#GAMM ----------
+                
+        m_gamm <- gamm(Plot_Albedo ~ Treatment +
+                               Years_Since_Exclosure +
+                               Productivity_Index +
+                               Treatment*Years_Since_Exclosure +
+                               s(Snow_Prop),
+                       data = model_data,
+                       random = )
+                
+
+                plot(m_res)
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                       
         #MODEL B: Include (snow)^2
                 
                 #Model form
-                model_b <- lmer(Plot_Albedo ~ Treatment +
+                m2 <- lmer(Plot_Albedo ~ Treatment +
                                         Years_Since_Exclosure +
                                         Snow_Prop +
                                         I(Snow_Prop^2) +
@@ -519,6 +764,66 @@
                 #Run classical AIC w/ penalty = 2
                 AIC(model_a, model_b)
                 
-#END MODEL A: LMM --------------------------------------------------------------------------------------
                 
+        
+                
+#END MODEL 1: LMM --------------------------------------------------------------------------------------
+                
+                
+                
+                
+#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+
+
+
+#TRY MODEL W/ BIOMASS OR VOLUME -------------------------------------------------------------------------------------------------
+                
+        #Import biomass CSV
+        bio <- read.csv("1_Albedo_Exclosures/1_Data_Processing/2_Biomass_Estimates/Output/plot_biomass.csv", header = T)
+                
+        #Add placeholder column to model_data
+        model_data$Biomass_kg_m2 <- as.numeric('')
+        
+        #Loop through model data and add
+        for(i in 1:nrow(model_data)){
+                
+                print(i)
+                
+                #Get variables
+                loc <- model_data[i, "LocalityCode"]
+                yr <- model_data[i, "Years_Since_Exclosure"]
+                
+                #Get biomass
+                bio_val <- bio$Mean_Plot_Biomass_kg_m2[bio$LocalityCode == loc & bio$Years_Since_Exclosure == yr]
+                
+                #Add biomass to row
+                model_data[i, "Biomass_kg_m2"] <- bio_val
+        }
+        
+        #Test correlations
+        cor.test(model_data$Biomass_kg_m2, model_data$Years_Since_Exclosure) #Biomass is highly correlated w/ Years Since Exclosure
+        cor.test(model_data$Biomass_kg_m2, model_data$Productivity_Index) #Biomass is strongly correlated w/ productivity index
+        cor.test(model_data$Biomass_kg_m2, model_data$Snow_Prop) #NOT correlated
+        
+        #Build model
+        model_c <- lmer(Plot_Albedo ~ Treatment +
+                                Snow_Prop +
+                                I(Snow_Prop^2) +
+                                Biomass_kg_m2 +
+                                Region +
+                                Treatment*Snow_Prop +
+                                Treatment*I(Snow_Prop^2) +
+                                Treatment*Biomass_kg_m2 + 
+                                Treatment*Region +
+                                (1 | LocalityName), data = model_data)
+        
+        plot(model_c, type = c("p", "smooth"))
+        summary(model_c)
+        
+        
+                #INCLUDING BIOMASS DOES NOT SOLVE TREND - specifically w/ Snow
+                
+                
+#END TRY MODEL W/ BIOMASS OR VOLUME ----------------------------------------------------------------------------------------------
                 
