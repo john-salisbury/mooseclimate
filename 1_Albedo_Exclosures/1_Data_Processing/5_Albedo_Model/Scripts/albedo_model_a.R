@@ -245,6 +245,8 @@
                         clim <- read.csv('1_Albedo_Exclosures/z_Data_Library/SeNorge_Climate_Data/Averages/average_climate_data_by_site.csv', header = T)
                         
                         model_data$SWE_mm <- as.numeric('')
+                        model_data$Temp_K <- as.numeric('')
+                        
                         
                         #Add SWE to model data
                         for(i in 1:nrow(model_data)){
@@ -252,8 +254,10 @@
                                 mt <- model_data[i, "Month"]
                                 
                                 swe <- clim$SWE_mm[clim$LocalityName == loc & clim$Month == mt]
+                                temp <- clim$Temperature_K[clim$LocalityName == loc & clim$Month == mt]
                                 
                                 model_data[i, "SWE_mm"] <- swe
+                                model_data[i, "Temp_K"] <- temp
                                 
                         }
                         
@@ -261,6 +265,13 @@
                         
         #Limit to "Composite" albedo group
         model_data <- model_data[model_data$Group == "Composite",]
+        
+        #Add season variable
+        model_data$Season[model_data$Month %in% c(1:3)] <- "Season_1"
+        model_data$Season[model_data$Month %in% c(4:6)] <- "Season_2"
+        model_data$Season[model_data$Month %in% c(7:9)] <- "Season_3"
+        model_data$Season[model_data$Month %in% c(10:12)] <- "Season_4"
+        
                 
                 
         #Write data for statistical model to CSV
@@ -401,36 +412,48 @@
                 #Ensure that Month is a factor
                 model_data$Month <- as.factor(model_data$Month)
                 
-                #Define model (LOG TRANSFORMATION MAKES RESIDUAL PLOTS LOOK BETTER)
+                #Define model 
                 model_a <- lmer(log(Plot_Albedo) ~ Treatment +
-                                        Years_Since_Exclosure +
                                         Productivity_Index +
                                         Snow_Prop +
                                         Region +
+                                        Years_Since_Exclosure +
                                         Treatment*Years_Since_Exclosure +
                                         Treatment*Snow_Prop +
-                                        Treatment*Region +
                                         (1 | LocalityName) + (1 | Month),
                                 data = model_data)
-                
-                summary(model_a)
                
+                summary(model_a)
+                
                 #Quick check of residuals
                 plot(model_a) #Looks OK - some weird variation at intermediate values
                 hist(resid(model_a)) #Normally distributed residuals
                 qqmath(resid(model_a)) #Relatively normal residuals
                 
+                
+
+                
+                
+                model_data$Month <- as.integer(model_data$Month)
+                model_a1 <- lme(log(Plot_Albedo) ~ Treatment +
+                                        Years_Since_Exclosure +
+                                        Productivity_Index +
+                                        Snow_Prop +
+                                        Region +
+                                        Season +
+                                        Treatment*Years_Since_Exclosure +
+                                        Treatment*Snow_Prop,
+                                random = ~ 1 | LocalityName,
+                                weights = varExp(form = ~Snow_Prop),
+                                data = model_data)
+                
+                plot(model_a1)
+                
+                
                 #Let's investigate residuals vs explanatory variables for trends
                 plot(resid(model_a) ~ model_data$Years_Since_Exclosure) #Looks linear 
                 plot(resid(model_a) ~ model_data$Productivity_Index) #No clear trends
                 plot(resid(model_a) ~ model_data$Snow_Prop) #Looks somewhat linear, but lots of variation at intermediate values
-                
-                test <- cbind(resid(model_a), model_data)
-                test <- test[test$Years_Since_Exclosure == 5,]
-                ggplot(data = test, aes(x = Snow_Prop, y = test$`resid(model_a)`)) +
-                        geom_point() +
-                        facet_wrap(~ LocalityCode) #When looking at each LocalityCode, looks pretty linear
-                
                 ggplot(data = model_data, aes(x = Treatment, y = resid(model_a))) +
                         geom_boxplot() +
                         theme_bw() #Very similar residuals between treatments
@@ -457,9 +480,32 @@
 
         #NOT SURE WHAT TO DO NEXT - POSSIBLY FIT SOME TYPE OF CUSTOM VARIANCE STRUCTURE (NOT SURE HOW TO DO THIS)
                 
+
+                #VARIDENT VARIANCE STRUCTURE
+                vf8 <- varComb(varIdent(form =~ 1 | Month) ,  varExp(form =~ Snow_Prop) )
                 
+                gls(Severity ~ Timepoint * Treatment + baseline, data = your_data, 
+                    correlation = corSymm(form = ~ 1 | Subject),
+                    weights = varIdent(form = ~ 1 | Timepoint))
                 
+                model_a1 <- lme(log(Plot_Albedo) ~ Treatment +
+                                        Years_Since_Exclosure +
+                                        Productivity_Index +
+                                        Snow_Prop +
+                                        Region +
+                                        Treatment*Years_Since_Exclosure +
+                                        Treatment*Snow_Prop +
+                                        Treatment*Region,
+                                random = ~ 1 | LocalityName,
+                                data = model_data,
+                                weights = vf8)
                 
+                plot(model_a1)
+                beep(8)
+                
+
+
+
         #DIAGNOSTIC PLOTS
                 
                 #Put model residuals and fitted values into df        
