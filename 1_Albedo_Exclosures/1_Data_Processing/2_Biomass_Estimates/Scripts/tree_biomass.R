@@ -92,12 +92,38 @@
                 
                 #Stangeskovene Eidskog
                 data$LocalityName[data$LocalityName == "stangeskovene eidskog"] <- "stangeskovene_eidskog"
+                data$LocalityName[data$LocalityName == "stangeskovene eidskog "] <- "stangeskovene_eidskog"
                 
                 #Stig Dahlen
                 data$LocalityName[data$LocalityName == "stig dæhlen"] <- "stig_dahlen"
                 
                 #Truls Holm
                 data$LocalityName[data$LocalityName == "truls holm"] <- "truls_holm"
+                
+                #Kongsvinger 1
+                data$LocalityName[data$LocalityName == "kongsvinger 1"] <- "kongsvinger_1"
+                
+                #Kongsvinger 2
+                data$LocalityName[data$LocalityName == "kongsvinger 2"] <- "kongsvinger_2"
+
+                #Maarud 1
+                data$LocalityName[data$LocalityName == "maarud 1"] <- "maarud_1"
+
+                #Maarud 2
+                data$LocalityName[data$LocalityName == "maarud 2"] <- "maarud_2"
+
+                #Maarud 3
+                data$LocalityName[data$LocalityName == "maarud 3"] <- "maarud_3"
+
+                #Nes 1
+                data$LocalityName[data$LocalityName == "nes 1"] <- "nes_1"
+
+                #Nes 2
+                data$LocalityName[data$LocalityName == "nes 2"] <- "nes_2"
+
+                #Sørum 1
+                data$LocalityName[data$LocalityName == "sørum 1"] <- "sorum_1"
+
               
                 
         #Add year column
@@ -119,6 +145,19 @@
                 data$Year <- dates
                 
                         #FIXED YEAR ISSUE MENTIONED ABOVE - DATES SHOULD NOW BE CORRECT
+                
+                
+        ##FILTER OUT 3 TRØNDELAG SITES THAT WERE ACCIDENTALLY THINNED IN 2015 (sites #9, 10, 13)----
+                
+                #SITE 9: MALVIK (MAB + MAUB)
+
+                #SITE 10: SELBU_FLUB (FLB + FLUB)
+                
+                #SITE 13: HI_TYDAL (HIB + HIUB)
+                bad_sites <- c("MAB", "MAUB", "FLB", "FLUB", "HIB", "HIUB")
+                data <- data[!data$LocalityCode %in% bad_sites,] #Brings us to 44 LocalityNames (looks good)
+                
+                
                 
 
 #END DATA FILTERING -------------------------------------------------------------------------------------

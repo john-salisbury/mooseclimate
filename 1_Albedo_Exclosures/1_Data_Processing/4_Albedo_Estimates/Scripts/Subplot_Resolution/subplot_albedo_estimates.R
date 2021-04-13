@@ -260,7 +260,7 @@
                 comp <- albedo[0,]
                 
                 #Get vector of localitycodes
-                used_sites <- levels(as.factor(albedo$LocalityCode))
+                used_sites <- levels(as.factor(albedo$LocalityCode)) ##88 sites - looks good (removed 3 LocalityNames)
         
                 #Loop through all plots of all sites in all months of all years
                 for(i in 1:length(used_sites)){

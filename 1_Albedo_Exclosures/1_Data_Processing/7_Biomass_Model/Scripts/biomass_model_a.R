@@ -89,7 +89,24 @@
                         
                         #Truls Holm
                         productivity$LocalityName[productivity$LocalityName == "truls holm"] <- "truls_holm"
-        
+                        
+                        #Kongsvinger 1 & 2
+                        productivity$LocalityName[productivity$LocalityName == "kongsvinger 1"] <- "kongsvinger_1"
+                        productivity$LocalityName[productivity$LocalityName == "kongsvinger 2"] <- "kongsvinger_2"
+                        
+                        #Maarud 1,2,3
+                        productivity$LocalityName[productivity$LocalityName == "maarud 1"] <- "maarud_1"
+                        productivity$LocalityName[productivity$LocalityName == "maarud 2"] <- "maarud_2"
+                        productivity$LocalityName[productivity$LocalityName == "maarud 3"] <- "maarud_3"
+                        
+                        #Nes 1,2
+                        productivity$LocalityName[productivity$LocalityName == "nes 1"] <- "nes_1"
+                        productivity$LocalityName[productivity$LocalityName == "nes 2"] <- "nes_2"
+                        
+                        #Sørum 1
+                        productivity$LocalityName[productivity$LocalityName == "sørum 1"] <- "sorum_1"
+                        
+                        
        
         #Biomass (total biomass)
                 
@@ -98,6 +115,59 @@
                 decid_bio <- read.csv("1_Albedo_Exclosures/1_Data_Processing/2_Biomass_Estimates/Output/plot_decid_biomass.csv", header = T)
                 pine_bio <- read.csv("1_Albedo_Exclosures/1_Data_Processing/2_Biomass_Estimates/Output/plot_pine_biomass.csv", header = T)
                 spruce_bio <- read.csv("1_Albedo_Exclosures/1_Data_Processing/2_Biomass_Estimates/Output/plot_spruce_biomass.csv", header = T)
+                
+        #FIX BIOMASS LOCALITYNAME ERRORS
+                
+                #Kongsvinger 1
+                total_bio$LocalityName[total_bio$LocalityName == "kongsvinger 1"] <- "kongsvinger_1"
+                decid_bio$LocalityName[decid_bio$LocalityName == "kongsvinger 1"] <- "kongsvinger_1"
+                pine_bio$LocalityName[pine_bio$LocalityName == "kongsvinger 1"] <- "kongsvinger_1"
+                spruce_bio$LocalityName[spruce_bio$LocalityName == "kongsvinger 1"] <- "kongsvinger_1"
+                
+                #Kongsvinger 2
+                total_bio$LocalityName[total_bio$LocalityName == "kongsvinger 2"] <- "kongsvinger_2"
+                decid_bio$LocalityName[decid_bio$LocalityName == "kongsvinger 2"] <- "kongsvinger_2"
+                pine_bio$LocalityName[pine_bio$LocalityName == "kongsvinger 2"] <- "kongsvinger_2"
+                spruce_bio$LocalityName[spruce_bio$LocalityName == "kongsvinger 2"] <- "kongsvinger_2"
+                
+                #Maarud 1
+                total_bio$LocalityName[total_bio$LocalityName == "maarud 1"] <- "maarud_1"
+                decid_bio$LocalityName[decid_bio$LocalityName == "maarud 1"] <- "maarud_1"
+                pine_bio$LocalityName[pine_bio$LocalityName == "maarud 1"] <- "maarud_1"
+                spruce_bio$LocalityName[spruce_bio$LocalityName == "maarud 1"] <- "maarud_1"
+                
+                #Maarud 2
+                total_bio$LocalityName[total_bio$LocalityName == "maarud 2"] <- "maarud_2"
+                decid_bio$LocalityName[decid_bio$LocalityName == "maarud 2"] <- "maarud_2"
+                pine_bio$LocalityName[pine_bio$LocalityName == "maarud 2"] <- "maarud_2"
+                spruce_bio$LocalityName[spruce_bio$LocalityName == "maarud 2"] <- "maarud_2"
+                
+                #Maarud 3
+                total_bio$LocalityName[total_bio$LocalityName == "maarud 3"] <- "maarud_3"
+                decid_bio$LocalityName[decid_bio$LocalityName == "maarud 3"] <- "maarud_3"
+                pine_bio$LocalityName[pine_bio$LocalityName == "maarud 3"] <- "maarud_3"
+                spruce_bio$LocalityName[spruce_bio$LocalityName == "maarud 3"] <- "maarud_3"
+                
+                #Nes 1
+                total_bio$LocalityName[total_bio$LocalityName == "nes 1"] <- "nes_1"
+                decid_bio$LocalityName[decid_bio$LocalityName == "nes 1"] <- "nes_1"
+                pine_bio$LocalityName[pine_bio$LocalityName == "nes 1"] <- "nes_1"
+                spruce_bio$LocalityName[spruce_bio$LocalityName == "nes 1"] <- "nes_1"
+                
+                #Nes 2
+                total_bio$LocalityName[total_bio$LocalityName == "nes 2"] <- "nes_2"
+                decid_bio$LocalityName[decid_bio$LocalityName == "nes 2"] <- "nes_2"
+                pine_bio$LocalityName[pine_bio$LocalityName == "nes 2"] <- "nes_2"
+                spruce_bio$LocalityName[spruce_bio$LocalityName == "nes 2"] <- "nes_2"
+                
+                #Sørum 1
+                total_bio$LocalityName[total_bio$LocalityName == "sørum 1"] <- "sorum_1"
+                decid_bio$LocalityName[decid_bio$LocalityName == "sørum 1"] <- "sorum_1"
+                pine_bio$LocalityName[pine_bio$LocalityName == "sørum 1"] <- "sorum_1"
+                spruce_bio$LocalityName[spruce_bio$LocalityName == "sørum 1"] <- "sorum_1"
+                
+                
+                
                 
                 
 #END INITIAL DATA IMPORT --------------------------------------------------------------------------------
@@ -117,7 +187,6 @@
                 #Make a copy of albedo data (using 'total biomass' df as a base)
                 model_data <- total_bio
                 
-        
                 #Add productivity index data ---
                 
                         #Placeholder column
@@ -311,7 +380,7 @@
                 #Variation between ranges - locality name also important to account for
         
         
-        #Distribution of albedo (outcome)
+        #Distribution of biomass (outcome)
         ggplot(data = model_data, aes(x = Mean_Plot_Biomass_kg_m2)) +
                 geom_histogram() +
                 theme_bw() +
@@ -322,7 +391,6 @@
                         axis.text.x = element_text(angle = 90, hjust = 1)
                 )
         
-                #Very skewed data w/ proportions
         
 #END EXPLORATORY DIAGNOSTIC PLOTS -----------------------------------------------------------------------------------
         
@@ -351,14 +419,14 @@
         
                         #Quick check of residuals
                         plot(model_a) #Heteroskedasticity
-                        hist(resid(model_a)) #Normally distributed residuals
-                        qqmath(resid(model_a)) #Relatively normal residuals
+                        hist(resid(model_a)) #Not normal distribution
+                        qqmath(resid(model_a)) #Not normal
                         
                                 #Let's investigate residuals vs explanatory variables for trends
                                 plot(resid(model_a) ~ model_data$Years_Since_Exclosure) #Spread of residuals is slightly greater after several years 
-                                plot(resid(model_a) ~ model_data$Productivity_Index) #No clear trends
+                                plot(resid(model_a) ~ model_data$Productivity_Index) #Seems to increase as productivity increases
 
-                ##KEY POINT: without any transformations, model has normally distributed residuals but heteroskedasticity
+                ##KEY POINT: without any transformations, model has heteroskedasticity and non-normal residuals
                 ##Some type of transformation is necessary
                       
                                           

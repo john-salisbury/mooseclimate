@@ -161,19 +161,9 @@
                 #Create volume/area (m3/ha) column - divide m3 by subplot area 
                 
                         vol_total$Volume_m3ha <- vol_total$Volume_m3 / subplot_area_ha
+      
                         
-        #Fix space/name issues
-        vol$LocalityName[vol$LocalityName == "nes 1"] <- "nes_1"
-        vol$LocalityName[vol$LocalityName == "nes 2"] <- "nes_2"
-        vol$LocalityName[vol$LocalityName == "kongsvinger 1"] <- "kongsvinger_1"
-        vol$LocalityName[vol$LocalityName == "kongsvinger 2"] <- "kongsvinger_2"
-        vol$LocalityName[vol$LocalityName == "maarud 1"] <- "maarud_1"
-        vol$LocalityName[vol$LocalityName == "maarud 2"] <- "maarud_2"
-        vol$LocalityName[vol$LocalityName == "maarud 3"] <- "maarud_3"
-        vol$LocalityName[vol$LocalityName == "sørum 1"] <- "sorum_1"
-        
-        
-                
+                        
 #END CALCULATE VOLUMES FOR EACH SUBPLOT ---------------------------------------------------
                 
                 
