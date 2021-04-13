@@ -38,7 +38,7 @@
         ## SITE DATA
         
                 #Get 'cleaned' site data from adjacent 'Sites' folder
-                site_data <- read.csv('1_Albedo_Exclosures/z_Data_Library/SustHerb_Site_Data/Usable_Data/cleaned_data.csv', header = TRUE)
+                site_data <- read.csv('1_Albedo_Exclosures/z_Data_Library/SustHerb_Site_Data/Usable_Data/all_sites_data.csv', header = TRUE)
                 
         #HERBIVORE DENSITY DATA (2015 - MUNICIPALITY RESOLUTION)
                         

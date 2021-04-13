@@ -26,7 +26,6 @@
         library(cowplot)
         library(sf)
         library(raster)
-        library(zoo)
         library(beepr)
         
 ###END PACKAGES ----------------------------------------------------------------------------------------
@@ -44,7 +43,7 @@
         ## SITE DATA
         
                 #Get 'cleaned' site data from adjacent 'Sites' folder
-                site_data <- read.csv('1_Albedo_Exclosures/z_Data_Library/SustHerb_Site_Data/Usable_Data/cleaned_data.csv', header = TRUE)
+                site_data <- read.csv('1_Albedo_Exclosures/z_Data_Library/SustHerb_Site_Data/Usable_Data/all_sites_data.csv', header = TRUE)
 
 
         #SUBPLOT STAND VOLUMES (m3/ha) (Trondelag/Hedmark/Telemark: 2009-2019) - circular subplots within each plot/LocalityCode
@@ -108,25 +107,34 @@
                         #Truls Holm
                         productivity$LocalityName[productivity$LocalityName == "truls holm"] <- "truls_holm"
                         
+                        #Nes 1
+                        productivity$LocalityName[productivity$LocalityName == "nes 1"] <- "nes_1"
                         
+                        #Nes 2
+                        productivity$LocalityName[productivity$LocalityName == "nes 2"] <- "nes_2"
+                        
+                        #Kongsvinger 1
+                        productivity$LocalityName[productivity$LocalityName == "kongsvinger 1"] <- "kongsvinger_1"
+                        
+                        #Kongsvinger 2
+                        productivity$LocalityName[productivity$LocalityName == "kongsvinger 2"] <- "kongsvinger_2"
+                        
+                        #Maarud 1-3
+                        productivity$LocalityName[productivity$LocalityName == "maarud 1"] <- "maarud_1"
+                        productivity$LocalityName[productivity$LocalityName == "maarud 2"] <- "maarud_2"
+                        productivity$LocalityName[productivity$LocalityName == "maarud 3"] <- "maarud_3"
+                        
+                        #Sørum 1
+                        productivity$LocalityName[productivity$LocalityName == "sørum 1"] <- "sorum_1"
+                        
+                        
+
         ## SUSTHERB TREE SPECIES PROPORTIONS (SUBPLOT LEVEL - 2009-2019)
                         
                 #Tree density data for Trøndelag, Telemark, and Hedmark (2009-2019)
                 tree_data <- read.csv('1_Albedo_Exclosures/z_Data_Library/Tree_Data/Usable_Data/tree_species_proportions_subplot_level.csv', header = TRUE)
-                tree_data <- tree_data[tree_data$Year <= 2019, 2:8]
+                tree_data <- tree_data[tree_data$Year <= 2019, 2:8] #94 different LocalityCodes
                 
-                        #Filter out unused SustHerb sites
-                        
-                        #Convert site codes to factors
-                        tree_data$LocalityCode <- as.factor(tree_data$LocalityCode)
-                        site_data$LocalityCode <- as.factor(site_data$LocalityCode)
-                        
-                        #Get vector of levels for sites that will be used (n = 74)
-                        used_sites <- levels(site_data$LocalityCode)
-                        
-                        #Filter tree data to used sites
-                        tree_data <- tree_data[tree_data$LocalityCode %in% used_sites,]
-                        tree_data$LocalityCode <- as.factor(as.character(tree_data$LocalityCode))
 
 #END INITIAL DATA IMPORT --------------------------------------------------------------------------------
         
@@ -250,6 +258,9 @@
                         
                 #Construct placeholder df w/ same structure as albedo df
                 comp <- albedo[0,]
+                
+                #Get vector of localitycodes
+                used_sites <- levels(as.factor(albedo$LocalityCode))
         
                 #Loop through all plots of all sites in all months of all years
                 for(i in 1:length(used_sites)){
@@ -271,11 +282,7 @@
                                 loc_name <- as.character(site_data$LocalityName[site_data$LocalityCode == loc])
                         
                                 #Treatment
-                                if(site_data$Treatment[site_data$LocalityCode == used_sites[i]] == "open"){
-                                        tr <- "B"
-                                } else if (site_data$Treatment[site_data$LocalityCode == used_sites[i]] == "exclosure"){
-                                        tr <- "UB"
-                                }
+                                tr <- site_data$Treatment[site_data$LocalityCode == used_sites[i]]
                                 
                                 #Group
                                 grp <- "Composite"
@@ -425,7 +432,7 @@
 #CALCULATE MEAN ALBEDO AT SUBPLOT LEVEL -------------------------------------------------------------------------------------
         
         #START HERE IF ALBEDO ALREADY SAVED TO CSV ------------------
-        final_albedo <- read.csv("1_Albedo_Exclosures/1_Data_Processing/4_Albedo_Estimates/Output/subplot_albedo_estimates.csv", header = T)
+        final_albedo <- read.csv("1_Albedo_Exclosures/1_Data_Processing/4_Albedo_Estimates/Output/Subplot_Resolution/subplot_albedo_estimates.csv", header = T)
         
         #Aggregate means for each group, month, and year since exclosure
         #Note: not doing anything with 'year' variable, since we're using a single set of

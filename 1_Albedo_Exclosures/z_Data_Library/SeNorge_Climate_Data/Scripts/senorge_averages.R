@@ -30,24 +30,25 @@
         #NOTE: 'FID' variable is unique ID for each LocalityCode
         senorge_locs <- read.csv('1_Albedo_Exclosures/z_Data_Library/SeNorge_Climate_Data/Original_Data/tro_hed_tel_utm33_localities.csv', header = T)
         
+                #48 LocalityNames (but only tree data for 47 sites) - need to filter to 47 used sites
+        
         #Load site data for SustHerb sites used in project analysis
-        site_data <- read.csv('1_Albedo_Exclosures/z_Data_Library/SustHerb_Site_Data/Usable_Data/cleaned_data.csv', header = T)
+        site_data <- read.csv('1_Albedo_Exclosures/z_Data_Library/SustHerb_Site_Data/Usable_Data/all_sites_data.csv', header = T)
         
-        #Load tree observations for SustHerb sites 
+
         
-        
-#END LOAD DATA -----------------------------
-        
+#END LOAD DATA -----------------------------------------------------------------------------------------------------
         
         
-#////////////////////////////////////////////
+        
+#//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
-#FORMAT/FILTER DATA -----------------------------
+#FORMAT/FILTER DATA -----------------------------------------------------------------------------------------------
 
         #Filter SeNorge data to sites that are used in rest of analysis (as they have full data from Snøan's project)
-        #(Note: These are the 74 sites/37 locality names in the 'site_data' CSV)
+        #(Note: These are the 94 sites/47 locality names in the 'site_data' CSV)
         
                 #Use 'LocalityCode' variable to filter out FIDs that correspond to unused SustHerb sites
                         
@@ -59,7 +60,7 @@
                         senorge_locs$LocalityCode <- as.factor(senorge_locs$LocalityCode)
                         senorge_locs <- senorge_locs[senorge_locs$LocalityCode %in% used_sites,]
                         
-                                #Filters to 37 localities, which matches up with used sites (looks good)
+                                #Filters to 47 localities, which matches up with used sites (looks good)
                                 #Now have only 'used sites' in senorge_locs df
                         
                 #Filter SeNorge data by FIDs corresponding to 'used sites' (i.e. those in senorge_locs df)
@@ -172,7 +173,7 @@
                         
                         #Get LocalityCode of 'browsed' site in LocalityName i
                         #(site FID is associated w/ browsed site)
-                        br <- as.character(site_data$LocalityCode[site_data$LocalityName == loc & site_data$Treatment == "open"])
+                        br <- as.character(site_data$LocalityCode[site_data$LocalityName == loc & site_data$Treatment == "B"])
                         
                         
                         #Loop through months 1-12 and calculate averages for each LocalityName
@@ -238,6 +239,10 @@
                 
         
         #GENERATE PLOTS (Colored by region) -------------
+                
+                #Start here if loading data -----------
+                final_data <- read.csv(final_data, '1_Albedo_Exclosures/z_Data_Library/SeNorge_Climate_Data/Averages/average_climate_data_by_site.csv', header = T)
+                
         
                 #Set strip text labels
                 months <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")

@@ -31,6 +31,9 @@
 
         #Import CSV to dataframe
         data <- read.csv('1_Albedo_Exclosures/z_Data_Library/Tree_Data/Usable_Data/sustherb_tree_data.csv', header = TRUE)
+        
+        #Import site data
+        site_data <-read.csv('1_Albedo_Exclosures/z_Data_Library/SustHerb_Site_Data/Usable_Data/all_sites_data.csv', header = TRUE)
 
 #END INITIAL DATA IMPORT --------------------------------------------------------------------------------
         
@@ -64,49 +67,38 @@
         #Exclude trees > 6m (600cm)
         data <- data %>% filter(Height_cm <= 600 | is.na(Height_cm))
 
-        #Filter to "Used Sites" with available productivity data (n = 37)
-        
-                #Get 'cleaned' site data from adjacent 'Sites' folder
-                site_data <- read.csv('1_Albedo_Exclosures/z_Data_Library/SustHerb_Site_Data/Usable_Data/cleaned_data.csv', header = TRUE)
-                site_data$LocalityCode <- as.factor(site_data$LocalityCode)
+        #Standardize LocalityNames in "data" df 
                 
-                #Get vector of levels for sites that will be used (n = 74)
-                used_sites <- levels(site_data$LocalityCode)
+                #Didrik Holmsen
+                data$LocalityName[data$LocalityName == "didrik holmsen"] <- "didrik_holmsen"
                 
-                #Standardize LocalityNames in "data" df
+                #Fet 3
+                data$LocalityName[data$LocalityName == "fet 3"] <- "fet_3"
                 
-                        #Didrik Holmsen
-                        data$LocalityName[data$LocalityName == "didrik holmsen"] <- "didrik_holmsen"
-                        
-                        #Fet 3
-                        data$LocalityName[data$LocalityName == "fet 3"] <- "fet_3"
-                        
-                        #Fritsøe 1
-                        data$LocalityName[data$LocalityName == "fritsøe1"] <- "fritsoe1"
-                        
-                        #Fritsøe 2
-                        data$LocalityName[data$LocalityName == "fritsøe2"] <- "fritsoe2"
-                        
-                        #Halvard Pramhus
-                        data$LocalityName[data$LocalityName == "halvard pramhus"] <- "halvard_pramhus"
-                        
-                        #Singsaas
-                        data$LocalityName[data$LocalityName == "singsås"] <- "singsaas"
-                        
-                        #Stangeskovene Aurskog
-                        data$LocalityName[data$LocalityName == "stangeskovene aurskog"] <- "stangeskovene_aurskog"
-                        
-                        #Stangeskovene Eidskog
-                        data$LocalityName[data$LocalityName == "stangeskovene eidskog"] <- "stangeskovene_eidskog"
-                        
-                        #Stig Dahlen
-                        data$LocalityName[data$LocalityName == "stig dæhlen"] <- "stig_dahlen"
-                        
-                        #Truls Holm
-                        data$LocalityName[data$LocalityName == "truls holm"] <- "truls_holm"
-                        
-                #Filter to used sites
-                data <- data[data$LocalityCode %in% used_sites,] #Brings us to 37 LocalityNames - looks good
+                #Fritsøe 1
+                data$LocalityName[data$LocalityName == "fritsøe1"] <- "fritsoe1"
+                
+                #Fritsøe 2
+                data$LocalityName[data$LocalityName == "fritsøe2"] <- "fritsoe2"
+                
+                #Halvard Pramhus
+                data$LocalityName[data$LocalityName == "halvard pramhus"] <- "halvard_pramhus"
+                
+                #Singsaas
+                data$LocalityName[data$LocalityName == "singsås"] <- "singsaas"
+                
+                #Stangeskovene Aurskog
+                data$LocalityName[data$LocalityName == "stangeskovene aurskog"] <- "stangeskovene_aurskog"
+                
+                #Stangeskovene Eidskog
+                data$LocalityName[data$LocalityName == "stangeskovene eidskog"] <- "stangeskovene_eidskog"
+                
+                #Stig Dahlen
+                data$LocalityName[data$LocalityName == "stig dæhlen"] <- "stig_dahlen"
+                
+                #Truls Holm
+                data$LocalityName[data$LocalityName == "truls holm"] <- "truls_holm"
+              
                 
         #Add year column
                 
@@ -261,10 +253,6 @@
                 
                 
                 
-        #DECISION MADE TO REMOVE TWO SITES FROM HEDMARK IN 2nd year of exclosure
-        data <- data[!(data$Region == "Hedmark" & data$Years_Since_Exclosure == 2),]
-                
-
         
 #END BIOMASS CALCULATION USING EXISTING MODELS -----------------------------------------------------------
                 

@@ -220,10 +220,76 @@
         beep(8)
         
         
+        #ADD LATITUDE AND LONGITUDE OF EACH SITE FOR CRISTINA --------
+        
+                #Load site data
+                site_data <- read.csv('1_Albedo_Exclosures/z_Data_Library/SustHerb_Site_Data/Usable_Data/all_sites_data.csv', header = TRUE)
+        
+                #Add placeholder columns
+                final$Latitude <- as.character('')
+                final$Longitude <- as.character('')
+                
+                #Add site name text fixes
+                final$LocalityName[final$LocalityName == "nes 1"] <- "nes_1"
+                final$LocalityName[final$LocalityName == "nes 2"] <- "nes_2"
+                final$LocalityName[final$LocalityName == "kongsvinger 1"] <- "kongsvinger_1"
+                final$LocalityName[final$LocalityName == "kongsvinger 2"] <- "kongsvinger_2"
+                final$LocalityName[final$LocalityName == "maarud 1"] <- "maarud_1"
+                final$LocalityName[final$LocalityName == "maarud 2"] <- "maarud_2"
+                final$LocalityName[final$LocalityName == "maarud 3"] <- "maarud_3"
+                final$LocalityName[final$LocalityName == "sørum 1"] <- "sorum_1"
+                
+                #Loop through and add
+                for(i in 1:nrow(final)){
+                        
+                        print(i)
+                        
+                        #Get LocalityName
+                        loc <- final[i, "LocalityName"]
+                        
+                        #Get latitude and longitude from site data (USING BROWSED PLOT as reference)
+                        lat <- site_data$Latitude[site_data$LocalityName == loc & site_data$Treatment == "B"]
+                        lon <- site_data$Longitude[site_data$LocalityName == loc & site_data$Treatment == "B"]
+                        
+                        #Add to row
+                        final[i, "Latitude"] <- lat
+                        final[i, "Longitude"] <- lon
+                }
         
         #WRITE FINAL CSV OF DELTAS
         write.csv(final, "1_Albedo_Exclosures/1_Data_Processing/6_Radiative_Forcing/Output/delta_carbon_albedo.csv")
         
+        
+        #Create simplified list of lat and lon for each LocalityName (for Cristina)
+        coords <- data.frame("Region" = as.character(),
+                             "LocalityName" = as.character(),
+                             "Latitude" = as.character(),
+                             "Longitude" = as.character())
+        
+        locs <- levels(as.factor(final$LocalityName))
+        
+        for(i in 1:length(locs)){
+                
+                loc <- locs[i]
+                reg <- final$Region[final$LocalityName == loc][1]
+                lat <- final$Latitude[final$LocalityName == loc][1]
+                lon <- final$Longitude[final$LocalityName == loc][1]
+                
+                temp <- data.frame("Region" = reg,
+                                   "LocalityName" = loc,
+                                   "Latitude" = lat,
+                                   "Longitude" = lon)
+                
+                coords <- rbind(coords, temp)
+                
+        }
+        
+        write.csv(coords, "1_Albedo_Exclosures/1_Data_Processing/6_Radiative_Forcing/Output/locality_coordinates.csv")
+        
+        
+        
+
+
         
 #ENDCREATE DATAFRAMES FOR RF CALCULATIONS --------------------------------------------------------------------------------------
         

@@ -43,7 +43,7 @@
 #INITIAL DATA IMPORT ----------------------------------------------------------------------------------------------
 
         #Get 'cleaned' site data from adjacent 'Sites' folder
-        site_data <- read.csv('1_Albedo_Exclosures/z_Data_Library/SustHerb_Site_Data/Usable_Data/cleaned_data.csv', header = TRUE)
+        site_data <- read.csv('1_Albedo_Exclosures/z_Data_Library/SustHerb_Site_Data/Usable_Data/all_sites_data.csv', header = TRUE)
 
         #Load PLOT-level albedo estimates
         plot_albedo <- read.csv("1_Albedo_Exclosures/1_Data_Processing/4_Albedo_Estimates/Output/Plot_Resolution/mean_plot_albedo.csv", header = T)
@@ -189,6 +189,9 @@
                         sec <- "exclosures relative to corresponding open plots"
                         lab <- paste(first, sec, sep = "\n")
                         text_annotation <- text_grob(lab, face = "italic", color = "#333333", size = 9)
+                        
+                        #Position
+                        pd <- position_dodge(0.5)
                         
                         g1 <- ggplot(data = subset(reg_filt, Group == "Composite"), aes(x = Month, y = Mean_Albedo_Diff, group = Years_Since_Exclosure, color = Years_Since_Exclosure, fill = Years_Since_Exclosure)) +
                                         geom_ribbon(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), alpha = 0.15, lwd = 0) +

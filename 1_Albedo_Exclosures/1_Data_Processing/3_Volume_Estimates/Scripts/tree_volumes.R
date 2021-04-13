@@ -161,7 +161,18 @@
                 #Create volume/area (m3/ha) column - divide m3 by subplot area 
                 
                         vol_total$Volume_m3ha <- vol_total$Volume_m3 / subplot_area_ha
-                
+                        
+        #Fix space/name issues
+        vol$LocalityName[vol$LocalityName == "nes 1"] <- "nes_1"
+        vol$LocalityName[vol$LocalityName == "nes 2"] <- "nes_2"
+        vol$LocalityName[vol$LocalityName == "kongsvinger 1"] <- "kongsvinger_1"
+        vol$LocalityName[vol$LocalityName == "kongsvinger 2"] <- "kongsvinger_2"
+        vol$LocalityName[vol$LocalityName == "maarud 1"] <- "maarud_1"
+        vol$LocalityName[vol$LocalityName == "maarud 2"] <- "maarud_2"
+        vol$LocalityName[vol$LocalityName == "maarud 3"] <- "maarud_3"
+        vol$LocalityName[vol$LocalityName == "sørum 1"] <- "sorum_1"
+        
+        
                 
 #END CALCULATE VOLUMES FOR EACH SUBPLOT ---------------------------------------------------
                 
@@ -614,7 +625,7 @@
                         
                         #Load herbivore density data & SustHerb site data to get herbivore densities for each site
                         hd <- st_read("1_Albedo_Exclosures/z_Data_Library/Herbivore_Density_Data/Usable_Data/NorwayLargeHerbivores.shp")
-                        site_data <- read.csv("1_Albedo_Exclosures/z_Data_Library/SustHerb_Site_Data/Usable_Data/cleaned_data.csv", header = T)
+                        site_data <- read.csv("1_Albedo_Exclosures/z_Data_Library/SustHerb_Site_Data/Usable_Data/all_sites_data.csv", header = T)
                         
                                 #Placeholder columns
                                 spec_vol$DistrictID <- as.character('')
@@ -625,16 +636,20 @@
                                 #Fix stangeskovene eidskog issue
                                 spec_vol$LocalityName[spec_vol$LocalityName == 'stangeskovene eidskog '] <- 'stangeskovene_eidskog'
                                 
+                                #Fix Nes 1 and 2 issue
+                                spec_vol$LocalityName[spec_vol$LocalityName == 'nes 1'] <- 'nes_1'
+                                spec_vol$LocalityName[spec_vol$LocalityName == 'nes 2'] <- 'nes_2'
+
                                 #Loop through rows
                                 for(i in 1:nrow(spec_vol)){
                                         
                                         #District ID ----
                                         
                                         #Get loc name
-                                        loc <- spec_vol[i, "LocalityName"]
+                                        loc <- spec_vol[i, "LocalityCode"]
                                         
                                         #Get district ID from site_data
-                                        id <- as.character(site_data$DistrictID[site_data$LocalityName == loc][1])
+                                        id <- as.character(site_data$DistrictID[site_data$LocalityCode == loc][1])
                                         
                                         #Format to match hbiomass2015 df (3-digit codes need 0 in front)
                                         if(nchar(id) == 3){
