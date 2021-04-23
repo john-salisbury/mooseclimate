@@ -15,7 +15,10 @@
         library(dplyr)
         library(tidyr)
         library(ggplot2)
-        library(wesanderson)
+
+        #Viridis package for color blindness palettes
+        library(viridis)
+
         
 ###END PACKAGES ----------------------------------------------------------------------------------------
 
@@ -157,7 +160,11 @@
                 bad_sites <- c("MAB", "MAUB", "FLB", "FLUB", "HIB", "HIUB")
                 data <- data[!data$LocalityCode %in% bad_sites,] #Brings us to 44 LocalityNames (looks good)
                 
-                
+        ##TOTAL:
+        
+                #Hedmark: 16 sites
+                #Telemark: 16 sites
+                #Trøndelag: 15 sites
                 
 
 #END DATA FILTERING -------------------------------------------------------------------------------------
@@ -323,6 +330,7 @@
         #Load data if starting here
         data <- read.csv("1_Albedo_Exclosures/1_Data_Processing/2_Biomass_Estimates/Output/tree_biomass.csv", header = T)
         
+       
         #TOTAL SUBPLOT BIOMASS BY TREATMENT --------------
                 
                 #Sum total biomass (g) for each plot
@@ -395,12 +403,12 @@
 
                         #Plot
                         ggplot(data = avg_biomass_df, aes(x = Years_Since_Exclosure, y = Mean_subplot_biomass_kg_m2, color = TNN, group = TNN)) +
-                                geom_errorbar(aes(ymin = (Mean_subplot_biomass_kg_m2 - SE), ymax = (Mean_subplot_biomass_kg_m2 + SE)), colour="black", width=0.5, position = position_dodge(0.2)) +
+                                geom_errorbar(aes(ymin = (Mean_subplot_biomass_kg_m2 - SE), ymax = (Mean_subplot_biomass_kg_m2 + SE)), colour="#666666", width=0.5, position = position_dodge(0.2)) +
                                 geom_point(aes(shape = TNN), size = 1.75, position = position_dodge(0.2)) +
                                 geom_line(aes(linetype = TNN)) +
-                                labs(x = "Years Since Exclosure", y = "Aboveground Biomass "~(kg/m^2), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
+                                labs(x = "Years Since Exclosure", y = " Biomass "~(kg/m^2), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
                                 scale_x_continuous(breaks = c(1,3,5,7,9,11)) +
-                                scale_color_manual(values = pal) +
+                                scale_color_manual(values = viridis(n = 2, alpha = 1, begin = 0, end = 0.6)) +
                                 theme_bw() +
                                 theme(
                                         axis.title.x = element_text(size = 12, margin = margin(t=10)),
@@ -483,9 +491,9 @@
                                         geom_point(aes(shape = TNN), size = 1.75, position = position_dodge(0.3)) +
                                         geom_line(aes(linetype = TNN)) +
                                         facet_wrap(~simple_taxa, nrow = 2) +
-                                        labs(x = "Years Since Exclosure", y = "Aboveground Biomass "~(kg/m^2), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
+                                        labs(x = "Years Since Exclosure", y = "Biomass "~(kg/m^2), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
                                         scale_x_continuous(breaks = c(2,4,6,8,10)) +
-                                        scale_color_manual(values = pal) +
+                                        scale_color_manual(values = viridis(n = 2, alpha = 1, begin = 0, end = 0.6)) +
                                         theme_bw() +
                                         theme(
                                                 axis.title.x = element_text(size = 12, margin = margin(t=10)),
@@ -576,11 +584,11 @@
                         ggplot(data = spec_simp_bio, aes(x = Years_Since_Exclosure, y = Mean_subplot_biomass_kg_m2, color = TNN, group = TNN)) +
                                 geom_errorbar(aes(ymin = (Mean_subplot_biomass_kg_m2 - SE), ymax = (Mean_subplot_biomass_kg_m2 + SE)), colour="black", width=0.5, position = position_dodge(0.3)) +
                                 geom_point(aes(shape = TNN), size = 1.75, position = position_dodge(0.3)) +
-                                geom_line(aes(linetype = TNN)) +
+                                geom_line(aes(linetype = TNN), position = position_dodge(0.3)) +
                                 facet_wrap(~Group, nrow = 3) +
-                                labs(x = "Years Since Exclosure", y = "Aboveground Biomass "~(kg/m^2), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
+                                labs(x = "Years Since Exclosure", y = "Biomass "~(kg/m^2), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
                                 scale_x_continuous(breaks = c(1,3,5,7,9,11)) +
-                                scale_color_manual(values = pal) +
+                                scale_color_manual(values = viridis(n = 2, alpha = 1, begin = 0, end = 0.6)) +
                                 theme_bw() +
                                 theme(
                                         axis.title.x = element_text(size = 12, margin = margin(t=10)),
@@ -633,19 +641,44 @@
 
                                         
                                 #Plot
+                                
+                                #Label for Hedmark facet
+                                ann_text_1 <- data.frame(Years_Since_Exclosure = 8.6, Mean_subplot_biomass_kg_m2 = 1.33, lab = "||",
+                                                       Region = "Hedmark", TNN = "Browsed")
+                                ann_text_2 <- data.frame(Years_Since_Exclosure = 8.6, Mean_subplot_biomass_kg_m2 = 0.88, lab = "||",
+                                                         Region = "Hedmark", TNN = "Browsed")
+                                
                                 ggplot(data = total_reg, aes(x = Years_Since_Exclosure, y = Mean_subplot_biomass_kg_m2, color = TNN, group = TNN)) +
                                         geom_errorbar(aes(ymin = (Mean_subplot_biomass_kg_m2 - SE), ymax = (Mean_subplot_biomass_kg_m2 + SE)), colour="black", width=0.5, position = position_dodge(0.3)) +
                                         geom_point(aes(shape = TNN), size = 1.75, position = position_dodge(0.3)) +
-                                        geom_line(aes(linetype = TNN)) +
+                                        geom_line(aes(linetype = TNN), position = position_dodge(0.3)) +
                                         facet_wrap(~Region, nrow = 3) +
-                                        labs(x = "Years Since Exclosure", y = "Aboveground Biomass "~(kg/m^2), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
+                                        labs(x = "Years Since Exclosure", y = "Biomass "~(kg/m^2), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
                                         scale_x_continuous(breaks = c(1,3,5,7,9,11)) +
-                                        scale_color_manual(values = pal) +
+                                        scale_color_manual(values = viridis(n = 2, alpha = 1, begin = 0, end = 0.6)) +
                                         theme_bw() +
                                         theme(
                                                 axis.title.x = element_text(size = 12, margin = margin(t=10)),
                                                 axis.title.y = element_text(size = 12, margin = margin(r=10))
-                                        )
+                                        ) +
+                                        geom_label(data = ann_text_1,
+                                                  label = "||",
+                                                  angle = 0.5,
+                                                  color = "#22A884FF",
+                                                  size = 3,
+                                                  label.padding = unit(0, "lines"),
+                                                  label.r = unit(0, "lines"),
+                                                  label.size = NA) +
+                                        geom_label(data = ann_text_2,
+                                                   label = "||",
+                                                   angle = 0.5,
+                                                   color = "#440154FF",
+                                                   size = 3,
+                                                   label.padding = unit(-0.05, "lines"),
+                                                   label.r = unit(0, "lines"),
+                                                   label.size = NA)
+                                        
+                                        
                         
                         
                         
@@ -696,11 +729,11 @@
                         ggplot(data = spec_simp_region, aes(x = Years_Since_Exclosure, y = Mean_subplot_biomass_kg_m2, color = TNN, group = TNN)) +
                                 geom_errorbar(aes(ymin = (Mean_subplot_biomass_kg_m2 - SE), ymax = (Mean_subplot_biomass_kg_m2 + SE)), colour="black", width=0.5, position = position_dodge(0.3)) +
                                 geom_point(aes(shape = TNN), size = 1.75, position = position_dodge(0.3)) +
-                                geom_line(aes(linetype = TNN)) +
+                                geom_line(aes(linetype = TNN), position = position_dodge(0.3)) +
                                 facet_grid(Region~Group) +
-                                labs(x = "Years Since Exclosure", y = "Aboveground Biomass "~(kg/m^2), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
+                                labs(x = "Years Since Exclosure", y = "Biomass "~(kg/m^2), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
                                 scale_x_continuous(breaks = c(1,3,5,7,9,11)) +
-                                scale_color_manual(values = pal) +
+                                scale_color_manual(values = viridis(n = 2, alpha = 1, begin = 0, end = 0.6)) +
                                 theme_bw() +
                                 theme(
                                         axis.title.x = element_text(size = 12, margin = margin(t=10)),

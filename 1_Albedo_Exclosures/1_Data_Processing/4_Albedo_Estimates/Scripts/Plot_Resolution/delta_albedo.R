@@ -200,7 +200,7 @@
                                         labs(x = "Month", y = expression(Delta*' Albedo (Excl. - Open)'), color = "Years Since Exclosure:", fill = "Years Since Exclosure:", shape = "Years Since Exclosure:") +
                                         facet_wrap(~Region, ncol = 3) +
                                         scale_x_continuous(breaks = c(1:12)) +
-                                        scale_y_continuous(limits = c(-0.031, 0.031)) +
+                                        scale_y_continuous(limits = c(-0.018, 0.01)) +
                                         scale_color_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
                                         scale_fill_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
                                         theme_bw() +
@@ -215,7 +215,7 @@
                                         )
                         g1
                         
-                        stacked <- plot_grid(NULL, text_annotation, NULL, g1, ncol = 1, rel_heights = c(0.01, 0.05, 0.025, 0.915))
+                        stacked <- plot_grid(NULL, text_annotation, NULL, g1, ncol = 1, rel_heights = c(0.05, 0.1, 0.05, 0.8))
                         stacked
                         
                         
@@ -391,7 +391,7 @@
                         facet_wrap(~Group, ncol = 4) +
                         ggtitle("(a) Hedmark") +
                         scale_x_continuous(breaks = c(1:12)) +
-                        scale_y_continuous(limits = c(-0.031, 0.031)) +
+                        scale_y_continuous(limits = c(-0.025, 0.013)) +
                         scale_color_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
                         scale_fill_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
                         theme_bw() +
@@ -416,7 +416,7 @@
                         facet_wrap(~Group, ncol = 4) +
                         ggtitle("(b) Telemark") +
                         scale_x_continuous(breaks = c(1:12)) +
-                        scale_y_continuous(limits = c(-0.031, 0.031)) +
+                        scale_y_continuous(limits = c(-0.025, 0.013)) +
                         scale_color_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
                         scale_fill_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
                         theme_bw() +
@@ -441,7 +441,7 @@
                         facet_wrap(~Group, ncol = 4) +
                         ggtitle("(c) Trøndelag") +
                         scale_x_continuous(breaks = c(1:12)) +
-                        scale_y_continuous(limits = c(-0.031, 0.031)) +
+                        scale_y_continuous(limits = c(-0.025, 0.013)) +
                         scale_color_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
                         scale_fill_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
                         theme_bw() +
