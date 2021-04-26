@@ -492,7 +492,7 @@
                                         #RANDOM STRUCTURE OF MODEL A4 IS "BEST" 
 
                         
-        #STEP 3: Compare nested models with AIC ---------
+        #STEP 4: Compare nested models with AIC ---------
                         
                 #Re-fit model from Step 2 w/ ML (for comparison of fixed effects)
                         
@@ -549,14 +549,14 @@
                         
                         
                                 
-        #STEP 4: AIC comparison of models -----------
+        #STEP 5: AIC comparison of models -----------
                 
                 AIC(model_a1, model_a2, model_a3, model_a4, model_a5, model_a6) 
                         
                         #Model A2 has the lowest AIC value and is "best fitting" model
 
                 
-        #STEP 5: Re-run model with REML for most accurate parameter estimates --------
+        #STEP 6: Re-run model with REML for most accurate parameter estimates --------
                 
                 final_model_a <- lmer(log(Mean_Plot_Biomass_kg_m2) ~ Treatment +
                                               Productivity_Index +
@@ -569,7 +569,7 @@
                                       REML = T)
                                 
                                 
-        #STEP 6: Double-check residual plots to validate ----------
+        #STEP 7: Double-check residual plots to validate ----------
                 
                 #Put model residuals and fitted values into df        
                 resid <- data.frame("Residuals" = resid(final_model_a),
@@ -605,7 +605,7 @@
                 
                 
                                 
-        #STEP 7: Back-transform log for estimates -----------
+        #STEP 8: Back-transform log for estimates -----------
         
                 #UNTRANSFORMED MODEL W/ BROWSED AS REFERENCE
                 

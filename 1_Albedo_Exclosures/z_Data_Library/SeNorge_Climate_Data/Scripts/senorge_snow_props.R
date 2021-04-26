@@ -29,7 +29,7 @@
         senorge_locs <- read.csv('1_Albedo_Exclosures/z_Data_Library/SeNorge_Climate_Data/Original_Data/tro_hed_tel_utm33_localities.csv', header = T)
         
         #Load site data for SustHerb sites used in project analysis
-        site_data <- read.csv('1_Albedo_Exclosures/z_Data_Library/SustHerb_Site_Data/Usable_Data/cleaned_data.csv', header = T)
+        site_data <- read.csv('1_Albedo_Exclosures/z_Data_Library/SustHerb_Site_Data/Usable_Data/all_sites_data.csv', header = T)
         
 
         
@@ -43,9 +43,6 @@
 
 #FORMAT/FILTER DATA -----------------------------
 
-        #Filter SeNorge data to sites that are used in rest of analysis (as they have full data from Snøan's project)
-        #(Note: These are the 74 sites/37 locality names in the 'site_data' CSV)
-        
                 #Use 'LocalityCode' variable to filter out FIDs that correspond to unused SustHerb sites
                         
                         #Get vector of LocalityCodes for used sites
@@ -56,8 +53,7 @@
                         senorge_locs$LocalityCode <- as.factor(senorge_locs$LocalityCode)
                         senorge_locs <- senorge_locs[senorge_locs$LocalityCode %in% used_sites,]
                         
-                                #Filters to 37 localities, which matches up with used sites (looks good)
-                                #Now have only 'used sites' in senorge_locs df
+                               
                         
                 #Filter SeNorge data by FIDs corresponding to 'used sites' (i.e. those in senorge_locs df)
                         
@@ -91,29 +87,29 @@
         
         #Assign REGION (Trøndelag, Telemark, and Hedmark) and LOCALITYCODE to data
         
-                #Placeholder columns
-                climate_filt$Region <- as.character('')
-                climate_filt$LocalityCode <- as.character('')
-                
+                #Add columns
+        
+                        #Get IDs
+                        hed_ids <- senorge_locs$FID[senorge_locs$Region == "Hedmark"]
+                        tro_ids <- senorge_locs$FID[senorge_locs$Region == "Trøndelag"]
+                        tel_ids <- senorge_locs$FID[senorge_locs$Region == "Telemark"]
+                        
+                        #Add region
+                        climate_filt$Region[climate_filt$trondelag_ %in% hed_ids] <- "Hedmark"
+                        climate_filt$Region[climate_filt$trondelag_ %in% tro_ids] <- "Trøndelag"
+                        climate_filt$Region[climate_filt$trondelag_ %in% tel_ids] <- "Telemark"
+                        
+                        #Add localityCode
+                        climate_filt$LocalityCode <- senorge_locs$LocalityCode[senorge_locs$FID == climate_filt$trondelag_]
+                        
+
                 #Loop through observations
                 for(i in 1:nrow(climate_filt)){
                         
                         print(i)
-                        
-                        #Get FID from climate data
-                        id <- climate_filt[i, "trondelag_"]
-                        
-                        #Get variables corresponding to FID from locs data
-                        
-                                #Region
-                                reg <- senorge_locs$Region[senorge_locs$FID == id]
-                                
-                                #LocalityCode
-                                loc <- as.character(senorge_locs$LocalityCode[senorge_locs$FID == id][1])
 
                         #Add to main df
-                        climate_filt[i, "Region"] <- reg
-                        climate_filt[i, "LocalityCode"] <- loc
+                        climate_filt[i, "LocalityCode"] <- as.character(senorge_locs$LocalityCode[senorge_locs$FID == climate_filt[i, "trondelag_"]][1])
                 }
                 
                 beep(8)
@@ -168,7 +164,7 @@
                         
                         #Get LocalityCode of 'browsed' site in LocalityName i
                         #(site FID is associated w/ browsed site)
-                        br <- as.character(site_data$LocalityCode[site_data$LocalityName == loc & site_data$Treatment == "open"])
+                        br <- as.character(site_data$LocalityCode[site_data$LocalityName == loc & site_data$Treatment == "B"])
                         
                         
                         #Loop through months 1-12 and calculate average prop of days w/ SWE > 0 for each LocalityName
@@ -248,3 +244,5 @@
         write.csv(final_data, '1_Albedo_Exclosures/z_Data_Library/SeNorge_Climate_Data/Snow_Proportions/average_prop_day_with_snow.csv')
                 
         
+                
+                

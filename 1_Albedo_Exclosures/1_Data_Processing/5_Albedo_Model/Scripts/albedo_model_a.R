@@ -18,8 +18,6 @@
         library(beepr)
         library(GGally)
         library(lattice)
-        library(sjPlot)
-        library(mgcv)
 
         
 ###END PACKAGES ----------------------------------------------------------------------------------------
@@ -37,7 +35,7 @@
         ## SITE DATA
         
                 #Get 'cleaned' site data from adjacent 'Sites' folder
-                site_data <- read.csv('1_Albedo_Exclosures/z_Data_Library/SustHerb_Site_Data/Usable_Data/cleaned_data.csv', header = TRUE)
+                site_data <- read.csv('1_Albedo_Exclosures/z_Data_Library/SustHerb_Site_Data/Usable_Data/all_sites_data.csv', header = TRUE)
                 
         #HERBIVORE DENSITY DATA (2015 - MUNICIPALITY RESOLUTION)
                         
@@ -55,40 +53,55 @@
                 
                 #Productivity Data
                 productivity <- read.csv('1_Albedo_Exclosures/z_Data_Library/SustHerb_Site_Data/Usable_Data/productivity_all_sites.csv', header = TRUE)
-                productivity$LocalityName <- tolower(productivity$LocalityName)
+                productivity$LocalityName <- tolower(productivity$LocalityName)  
                 
-                #Correct LocalityName items in productivity CSV
+                #Didrik Holmsen
+                productivity$LocalityName[productivity$LocalityName == "didrik holmsen"] <- "didrik_holmsen"
                 
-                        #Didrik Holmsen
-                        productivity$LocalityName[productivity$LocalityName == "didrik holmsen"] <- "didrik_holmsen"
-                        
-                        #Fet 3
-                        productivity$LocalityName[productivity$LocalityName == "fet 3"] <- "fet_3"
-                        
-                        #Fritsøe 1
-                        productivity$LocalityName[productivity$LocalityName == "fritsøe1"] <- "fritsoe1"
-                        
-                        #Fritsøe 2
-                        productivity$LocalityName[productivity$LocalityName == "fritsøe2"] <- "fritsoe2"
-                        
-                        #Halvard Pramhus
-                        productivity$LocalityName[productivity$LocalityName == "halvard pramhus"] <- "halvard_pramhus"
-                        
-                        #Singsaas
-                        productivity$LocalityName[productivity$LocalityName == "singsås"] <- "singsaas"
-                        
-                        #Stangeskovene Aurskog
-                        productivity$LocalityName[productivity$LocalityName == "stangeskovene aurskog"] <- "stangeskovene_aurskog"
-                        
-                        #Stangeskovene Eidskog
-                        productivity$LocalityName[productivity$LocalityName == "stangeskovene eidskog"] <- "stangeskovene_eidskog"
-                        
-                        #Stig Dahlen
-                        productivity$LocalityName[productivity$LocalityName == "stig dæhlen"] <- "stig_dahlen"
-                        
-                        #Truls Holm
-                        productivity$LocalityName[productivity$LocalityName == "truls holm"] <- "truls_holm"
-        
+                #Fet 3
+                productivity$LocalityName[productivity$LocalityName == "fet 3"] <- "fet_3"
+                
+                #Fritsøe 1
+                productivity$LocalityName[productivity$LocalityName == "fritsøe1"] <- "fritsoe1"
+                
+                #Fritsøe 2
+                productivity$LocalityName[productivity$LocalityName == "fritsøe2"] <- "fritsoe2"
+                
+                #Halvard Pramhus
+                productivity$LocalityName[productivity$LocalityName == "halvard pramhus"] <- "halvard_pramhus"
+                
+                #Singsaas
+                productivity$LocalityName[productivity$LocalityName == "singsås"] <- "singsaas"
+                
+                #Stangeskovene Aurskog
+                productivity$LocalityName[productivity$LocalityName == "stangeskovene aurskog"] <- "stangeskovene_aurskog"
+                
+                #Stangeskovene Eidskog
+                productivity$LocalityName[productivity$LocalityName == "stangeskovene eidskog"] <- "stangeskovene_eidskog"
+                
+                #Stig Dahlen
+                productivity$LocalityName[productivity$LocalityName == "stig dæhlen"] <- "stig_dahlen"
+                
+                #Truls Holm
+                productivity$LocalityName[productivity$LocalityName == "truls holm"] <- "truls_holm"
+                
+                #Kongsvinger 1 & 2
+                productivity$LocalityName[productivity$LocalityName == "kongsvinger 1"] <- "kongsvinger_1"
+                productivity$LocalityName[productivity$LocalityName == "kongsvinger 2"] <- "kongsvinger_2"
+                
+                #Maarud 1,2,3
+                productivity$LocalityName[productivity$LocalityName == "maarud 1"] <- "maarud_1"
+                productivity$LocalityName[productivity$LocalityName == "maarud 2"] <- "maarud_2"
+                productivity$LocalityName[productivity$LocalityName == "maarud 3"] <- "maarud_3"
+                
+                #Nes 1,2
+                productivity$LocalityName[productivity$LocalityName == "nes 1"] <- "nes_1"
+                productivity$LocalityName[productivity$LocalityName == "nes 2"] <- "nes_2"
+                
+                #Sørum 1
+                productivity$LocalityName[productivity$LocalityName == "sørum 1"] <- "sorum_1"
+                
+                
         ## MONTHLY AVERAGE PROPORTION OF DAYS WITH SNOW (SITE-SPECIFIC)
         ## Note: this is used instead of SWE
                         
@@ -297,7 +310,7 @@
         #Assess multicollinearity between continuous numerical variables ------
         
                 #Grab numerical variables (for "composite" albedo only)
-                numerical <- model_data[,c(8,10,12:16)]
+                numerical <- model_data[,c(8,10,12:14,16)]
                 
                 #Correlation matrix of numerical variables
                 png(filename = "1_Albedo_Exclosures/1_Data_Processing/5_Albedo_Model/Output/Plots/correlation_matrix.png",
@@ -405,112 +418,159 @@
 
 #MODEL A --------------------------------------------------------------------------------------
      
-#Using the general model-building procedures recommended by Heinze et al. (2018)
+#Using the model-building protocol by Zuur et al.
                 
-        #STEP 1: Define the most interesting model ---------
+                
+        #STEP 1: Define the 'beyond optimal' model ---------
+                
+                #NOTE: Zuur suggests that, if there are many covariates, it is appropriate to build model according
+                #to system knowledge (but include all interactions that might be relevant)
                 
                 #Ensure that Month is a factor
                 model_data$Month <- as.factor(model_data$Month)
                 
                 #Define model 
-                model_a <- lmer(log(Plot_Albedo) ~ Treatment +
-                                        Productivity_Index +
-                                        Snow_Prop +
-                                        Region +
-                                        Years_Since_Exclosure +
-                                        Treatment*Years_Since_Exclosure +
-                                        Treatment*Snow_Prop +
-                                        (1 | LocalityName) + (1 | Month),
+                model_a <- lmer(Plot_Albedo ~ Productivity_Index +
+                                        Treatment*Snow_Prop*Years_Since_Exclosure +
+                                        (1 | Region/LocalityName) + (1 | Month),
                                 data = model_data)
                
-                summary(model_a)
-                
                 #Quick check of residuals
-                plot(model_a) #Looks OK - some weird variation at intermediate values
-                hist(resid(model_a)) #Normally distributed residuals
-                qqmath(resid(model_a)) #Relatively normal residuals
+                plot(model_a) #Not great
+                hist(resid(model_a)) #Skewed
+                qqmath(resid(model_a)) #Not great
+                
+                        #KEY POINT - Transformation of outcome might be necessary to address
+                        #heteroskedasticity in residual plots
                 
                 
 
+        #STEP 2: Log-transform outcome to address heteroskedasticity -------
                 
-                
-                model_data$Month <- as.integer(model_data$Month)
-                model_a1 <- lme(log(Plot_Albedo) ~ Treatment +
-                                        Years_Since_Exclosure +
-                                        Productivity_Index +
-                                        Snow_Prop +
-                                        Region +
-                                        Season +
-                                        Treatment*Years_Since_Exclosure +
-                                        Treatment*Snow_Prop,
-                                random = ~ 1 | LocalityName,
-                                weights = varExp(form = ~Snow_Prop),
+                #Define model 
+                model_a <- lmer(log(Plot_Albedo) ~ Productivity_Index*Treatment*Snow_Prop*Years_Since_Exclosure +
+                                        (1 | Region/LocalityName) + (1 | Month),
                                 data = model_data)
                 
-                plot(model_a1)
+                #Quick check of residuals
+                plot(model_a) #Looks much better
+                hist(resid(model_a)) #Slightly more normal
+                qqmath(resid(model_a)) #Not great
                 
+                   
+                     
+        #STEP 3: Identify best random effects structure using AIC ---------
                 
-                #Let's investigate residuals vs explanatory variables for trends
-                plot(resid(model_a) ~ model_data$Years_Since_Exclosure) #Looks linear 
-                plot(resid(model_a) ~ model_data$Productivity_Index) #No clear trends
-                plot(resid(model_a) ~ model_data$Snow_Prop) #Looks somewhat linear, but lots of variation at intermediate values
-                ggplot(data = model_data, aes(x = Treatment, y = resid(model_a))) +
-                        geom_boxplot() +
-                        theme_bw() #Very similar residuals between treatments
-                ggplot(data = model_data, aes(x = Region, y = resid(model_a))) +
-                        geom_boxplot() +
-                        theme_bw() #Telemark has more positive residuals, while Hedmark & Trøndelag have more neg's
-                ggplot(data = model_data, aes(x = LocalityName, y = resid(model_a))) +
-                        geom_boxplot() +
-                        theme_bw()
-                ggplot(data = model_data, aes(x = Month, y = resid(model_a))) +
-                        geom_boxplot() +
-                        theme_bw() #Pretty similar residuals across months (largest spread in April)
+                #Fit with REML (to compare random effects structure)
+                #NOTE: adding month as a crossed random effect is necessary to make residual plots
+                #look OK
                 
+                #Region/LocalityName + Month
+                m1 <- lmer(log(Plot_Albedo) ~ Productivity_Index*Treatment*Snow_Prop*Years_Since_Exclosure +
+                                   (1 | Region/LocalityName) + (1 | Month),
+                           data = model_data,
+                           REML = T)
                 
-                ##KEY POINTS:
-                
-                        #Log transformation is necessary - lots of variation in residuals at intermediate values
-                        ##of avg. snow prop
-                
-                        #Heterogenous variance (larger residuals for intermediate fitted values)
-                
-                
-        
+                #LocalityName + Month
+                m2 <- lmer(log(Plot_Albedo) ~ Productivity_Index*Treatment*Snow_Prop*Years_Since_Exclosure +
+                                   (1 | LocalityName) + (1 | Month),
+                           data = model_data,
+                           REML = T)
 
-        #NOT SURE WHAT TO DO NEXT - POSSIBLY FIT SOME TYPE OF CUSTOM VARIANCE STRUCTURE (NOT SURE HOW TO DO THIS)
+                #AIC Comparison
+                AIC(m1, m2)
                 
+                        #Very similar AIC values (within 2 points) - going to use the model
+                        #with Region/LocalityName to account for variation due to region
 
-                #VARIDENT VARIANCE STRUCTURE
-                vf8 <- varComb(varIdent(form =~ 1 | Month) ,  varExp(form =~ Snow_Prop) )
+               
+        #STEP 4: Compare nested models with AIC ---------
                 
-                gls(Severity ~ Timepoint * Treatment + baseline, data = your_data, 
-                    correlation = corSymm(form = ~ 1 | Subject),
-                    weights = varIdent(form = ~ 1 | Timepoint))
+                #Re-fit model from Step 3 w/ ML (for comparison of fixed effects)
+                m1 <- lmer(log(Plot_Albedo) ~ Productivity_Index*Treatment*Snow_Prop*Years_Since_Exclosure +
+                                   (1 | Region/LocalityName) + (1 | Month),
+                           data = model_data,
+                           REML = F)
                 
-                model_a1 <- lme(log(Plot_Albedo) ~ Treatment +
-                                        Years_Since_Exclosure +
-                                        Productivity_Index +
-                                        Snow_Prop +
-                                        Region +
-                                        Treatment*Years_Since_Exclosure +
-                                        Treatment*Snow_Prop +
-                                        Treatment*Region,
-                                random = ~ 1 | LocalityName,
-                                data = model_data,
-                                weights = vf8)
+                #Nested models (of interest, since there are many possible interaction combos)
+                m2 <- lmer(log(Plot_Albedo) ~ Treatment +
+                                   Years_Since_Exclosure +
+                                   Snow_Prop +
+                                   Productivity_Index +
+                                   Treatment*Years_Since_Exclosure +
+                                   Treatment*Snow_Prop +
+                                   Treatment*Productivity_Index +
+                                   Treatment*Snow_Prop*Years_Since_Exclosure +
+                                   (1 | Region/LocalityName) + (1 | Month),
+                           data = model_data,
+                           REML = F)
                 
-                plot(model_a1)
-                beep(8)
+                m3 <- lmer(log(Plot_Albedo) ~ Treatment +
+                                   Years_Since_Exclosure +
+                                   Snow_Prop +
+                                   Productivity_Index +
+                                   Treatment*Years_Since_Exclosure +
+                                   Treatment*Snow_Prop +
+                                   Treatment*Snow_Prop*Years_Since_Exclosure +
+                                   (1 | Region/LocalityName) + (1 | Month),
+                           data = model_data,
+                           REML = F)
                 
-
-
-
-        #DIAGNOSTIC PLOTS
+                m4 <- lmer(log(Plot_Albedo) ~ Treatment +
+                                   Years_Since_Exclosure +
+                                   Snow_Prop +
+                                   Productivity_Index +
+                                   Treatment*Years_Since_Exclosure +
+                                   Treatment*Snow_Prop +
+                                   Treatment*Productivity_Index +
+                                   (1 | Region/LocalityName) + (1 | Month),
+                           data = model_data,
+                           REML = F)
+                
+                m5 <- lmer(log(Plot_Albedo) ~ Treatment +
+                                   Years_Since_Exclosure +
+                                   Snow_Prop +
+                                   Productivity_Index +
+                                   Treatment*Years_Since_Exclosure +
+                                   Treatment*Snow_Prop +
+                                   (1 | Region/LocalityName) + (1 | Month),
+                           data = model_data,
+                           REML = F)
+                
+                m6 <- lmer(log(Plot_Albedo) ~ Treatment +
+                                   Years_Since_Exclosure +
+                                   Snow_Prop +
+                                   Treatment*Years_Since_Exclosure +
+                                   Treatment*Snow_Prop +
+                                   (1 | Region/LocalityName) + (1 | Month),
+                           data = model_data,
+                           REML = F)
+                
+                
+                #AIC Comparison
+                AIC(m1, m2, m3, m4, m5, m6)
+                
+                        #Model 6 is the "best-fitting" model
+                
+                
+                
+        #STEP 5: Re-run model with REML for most accurate parameter estimates --------
+                
+                final_model_a <- lmer(log(Plot_Albedo) ~ Treatment +
+                                              Years_Since_Exclosure +
+                                              Snow_Prop +
+                                              Treatment*Years_Since_Exclosure +
+                                              Treatment*Snow_Prop +
+                                              (1 | Region/LocalityName) + (1 | Month),
+                                      data = model_data,
+                                      REML = T)
+                
+                
+        #STEP 7: Double-check residual plots to validate ----------
                 
                 #Put model residuals and fitted values into df        
-                resid <- data.frame("Residuals" = resid(model_a),
-                                    "Fitted" = fitted(model_a))
+                resid <- data.frame("Residuals" = resid(final_model_a),
+                                    "Fitted" = fitted(final_model_a))
                 
                 #Normality of model residuals (histogram)
                 p1 <- ggplot(data = resid, aes(x = Residuals)) +
@@ -524,11 +584,11 @@
                         geom_vline(xintercept = mean(resid$Residuals), linetype = 2)
                 
                 #Homoskedasticity of model residuals (residuals vs. model-fitted values)
-                p2 <- qqmath(resid(model_a))
-                p3 <- plot(model_a)
-                p4 <- plot(model_a, sqrt(abs(resid(., scaled=TRUE))) ~ fitted(.),
+                p2 <- qqmath(resid(final_model_a))
+                p3 <- plot(final_model_a)
+                p4 <- plot(final_model_a, sqrt(abs(resid(., scaled=TRUE))) ~ fitted(.),
                            type = c("p", "smooth"))
-                p5 <- plot(model_a, resid(., scaled=TRUE) ~ fitted(.) | Treatment,
+                p5 <- plot(final_model_a, resid(., scaled=TRUE) ~ fitted(.) | Treatment,
                            abline = 0, type = c("p", "smooth"), layout = c(2,1))
                 
                 #Assemble complex plot
@@ -536,11 +596,45 @@
                 middle_row <- plot_grid(p3, NULL, p4, ncol = 3, rel_widths = (c(0.45,0.1,0.45)))
                 bottom_row <- plot_grid(p5, NULL, NULL, ncol = 3, rel_widths = (c(0.45,0.1,0.45)))
                 
-                
                 complex_plot <- plot_grid(top_row, NULL, middle_row, NULL, bottom_row, ncol = 1, rel_heights = c(0.31, 0.035, 0.31, 0.035, 0.31))
                 complex_plot
                 
+
+        #STEP 8: Back-transform log for estimates -----------
                 
+                #UNTRANSFORMED MODEL W/ BROWSED AS REFERENCE
+                
+                        #Summarize model
+                        summary(final_model_a)
+                        
+                        #Confidence intervals
+                        m_b_ci <- confint(final_model_a)
+                        
+                
+                #UNTRANSFORMED MODEL W/ UNBROWSED AS REFERENCE
+                
+                #Switch reference group to unbrowsed (look at Years_Since_Exclosure)
+                levels(model_data$Treatment)
+                model_data$Treatment <- factor(model_data$Treatment, levels = c("UB", "B"))
+                
+                #Re-run model
+                rerun <-  lmer(log(Plot_Albedo) ~ Treatment +
+                                       Years_Since_Exclosure +
+                                       Snow_Prop +
+                                       Treatment*Years_Since_Exclosure +
+                                       Treatment*Snow_Prop +
+                                       (1 | Region/LocalityName) + (1 | Month),
+                               data = model_data,
+                               REML = T)
+                
+                #New summary
+                summary(rerun)
+                
+                #Confidence intervals
+                m_ub_ci <- confint(rerun)
+                
+                
+
                 
         
                 
