@@ -22,7 +22,9 @@ An analysis of aboveground tree biomass, surface albedo, and climate forcing acr
 * Net climate forcing estimates made by NTNU Department of Industrial Ecology using methods adapted from [Cherubini et al. (2018)](https://www.tandfonline.com/doi/abs/10.1080/1747423X.2018.1529831?journalCode=tlus20)
 
 **Key Results**:
-
+![Biomass trends](https://allyworks.io/moose-albedo/img/biomass_trends.png)
+![Delta albedo trends](https://allyworks.io/moose-albedo/img/delta_albedo.png)
+![Biomass trends](https://allyworks.io/moose-albedo/img/net_rf.png)
 
 
 ---
@@ -42,7 +44,7 @@ An exploratory spatial analysis of the relationship between large herbivore dens
 * CLARA clustering to better visualize trends in forest volume over a range of moose densities
 
 **Key Results**:
-The key relationship of interest here is moose density versus forest volume (since albedo is directly dependent upon forest volume). We used CLARA clustering to identify areas of Norway with similar climate and forest age. We then plotted rolling means of forest volume (k = 5) vs. moose density within subsets of elevation. Unfortunately, it appears that the spatial herbivore data might be too coarse to see any meaningful trends.
+* The key relationship of interest here is moose density versus forest volume (since albedo is directly dependent upon forest volume). We used CLARA clustering to identify areas of Norway with similar climate and forest age. We then plotted rolling means of forest volume (k = 5) vs. moose density within subsets of elevation. Unfortunately, it appears that the spatial herbivore data might be too coarse to see any meaningful trends.
 
 ![Moose Density](https://allyworks.io/moose-albedo/img/moose_density_albedo.png)
 
