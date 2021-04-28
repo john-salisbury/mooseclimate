@@ -30,8 +30,7 @@ An analysis of aboveground tree biomass, surface albedo, and climate forcing acr
 ## Spatial component: 
 An exploratory spatial analysis of the relationship between large herbivore density and forest surface albedo in early successional forest.
 
-![SatSkog flowchart]
-(https://allyworks.io/moose-albedo/img/Approach_SatSkog_Flowchart.png)
+![SatSkog flowchart](https://allyworks.io/moose-albedo/img/Approach_SatSkog_Flowchart.png)
 
 **Data**:
 * SatSkog spatial forest data product (vector data) from the Norwegian Institute for Bioeconomics ([description here](https://www.nibio.no/tema/skog/kart-over-skogressurser/satskog))
@@ -45,8 +44,7 @@ An exploratory spatial analysis of the relationship between large herbivore dens
 **Key Results**:
 The key relationship of interest here is moose density versus forest volume (since albedo is directly dependent upon forest volume). We used CLARA clustering to identify areas of Norway with similar climate and forest age. We then plotted rolling means of forest volume (k = 5) vs. moose density within subsets of elevation. Unfortunately, it appears that the spatial herbivore data might be too coarse to see any meaningful trends.
 
-![Moose Density]
-(https://allyworks.io/moose-albedo/img/moose_density_albedo.png)
+![Moose Density](https://allyworks.io/moose-albedo/img/moose_density_albedo.png)
 
 
 
