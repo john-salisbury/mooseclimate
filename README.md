@@ -5,9 +5,11 @@ John Salisbury - NTNU Master's Thesis Project (2019-2021)
 
 This is the GitHub repo for John Salisbury's MSc Biology thesis project. It is a subset of NTNU's SustHerb project, which seeks to explore the role of large herbivores in Norwegian forest dynamics. 
 
+---
+
 This project has two major components:
 
-### Exclosure component:
+## Exclosure component:
 An analysis of aboveground tree biomass, surface albedo, and climate forcing across 10 years of forest herbivore exclosure in 44 study sites across Norway. 
 
 **Data**:
@@ -25,11 +27,14 @@ An analysis of aboveground tree biomass, surface albedo, and climate forcing acr
 
 ---
 
-### Spatial component: 
+## Spatial component: 
 An exploratory spatial analysis of the relationship between large herbivore density and forest surface albedo in early successional forest.
 
+![SatSkog flowchart]
+(https://allyworks.io/moose-albedo/img/Approach_SatSkog_Flowchart.png)
+
 **Data**:
-* SatSkog spatial forest data product (vector data) from the Norwegian Institute for Bioeconomics ([data product here](https://www.nibio.no/tema/skog/kart-over-skogressurser/satskog))
+* SatSkog spatial forest data product (vector data) from the Norwegian Institute for Bioeconomics ([description here](https://www.nibio.no/tema/skog/kart-over-skogressurser/satskog))
 * Spatiotemporal snow water-equivalent (SWE) and temperature (K) observations across Norway at 1km2 resolution (raster format) - *provided by SeNorge (Norwegian Meteorological Institute)*
 * Spatiotemporal large herbivore density data (vector data) for all municipalities in Norway - *provided by SustHerb project at NTNU*
 
@@ -38,7 +43,10 @@ An exploratory spatial analysis of the relationship between large herbivore dens
 * CLARA clustering to better visualize trends in forest volume over a range of moose densities
 
 **Key Results**:
-The key relationship of interest here is moose density versus forest volume (since albedo is directly dependent upon forest volume). We used CLARA clustering to identify areas of Norway with similar climate and forest age. We then plotted rolling means of forest volume (k = 5) vs. moose density. Unfortunately, it appears that the spatial herbivore data might be too coarse to see any meaningful trends.
+The key relationship of interest here is moose density versus forest volume (since albedo is directly dependent upon forest volume). We used CLARA clustering to identify areas of Norway with similar climate and forest age. We then plotted rolling means of forest volume (k = 5) vs. moose density within subsets of elevation. Unfortunately, it appears that the spatial herbivore data might be too coarse to see any meaningful trends.
+
+![Moose Density]
+(https://allyworks.io/moose-albedo/img/moose_density_albedo.png)
 
 
 
