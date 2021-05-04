@@ -20,9 +20,74 @@
 
 #INITIAL DATA IMPORT ----------------------------------------------------------------------------------------------
 
-        #Import tree-specific biomass (calculated in 'tree_biomass.R')
-        biomass <- read.csv('1_Albedo_Exclosures/1_Data_Processing/2_Biomass_Estimates/Output/plot_biomass.csv', header = TRUE)
+        #Import plot-level biomass
 
+                #Total biomass
+                total_bio <- read.csv('1_Albedo_Exclosures/1_Data_Processing/2_Biomass_Estimates/Output/plot_biomass.csv', header = TRUE)
+
+                #Deciduous biomass
+                decid_bio <- read.csv('1_Albedo_Exclosures/1_Data_Processing/2_Biomass_Estimates/Output/plot_decid_biomass.csv', header = TRUE)
+                
+                #Pine biomass
+                pine_bio <- read.csv('1_Albedo_Exclosures/1_Data_Processing/2_Biomass_Estimates/Output/plot_pine_biomass.csv', header = TRUE)
+                
+                #Spruce biomass
+                spruce_bio <- read.csv('1_Albedo_Exclosures/1_Data_Processing/2_Biomass_Estimates/Output/plot_spruce_biomass.csv', header = TRUE)
+                
+                
+        #Fix LocalityName errors
+                
+                #Kongsvinger 1
+                total_bio$LocalityName[total_bio$LocalityName == "kongsvinger 1"] <- "kongsvinger_1"
+                decid_bio$LocalityName[decid_bio$LocalityName == "kongsvinger 1"] <- "kongsvinger_1"
+                pine_bio$LocalityName[pine_bio$LocalityName == "kongsvinger 1"] <- "kongsvinger_1"
+                spruce_bio$LocalityName[spruce_bio$LocalityName == "kongsvinger 1"] <- "kongsvinger_1"
+                
+                #Kongsvinger 2
+                total_bio$LocalityName[total_bio$LocalityName == "kongsvinger 2"] <- "kongsvinger_2"
+                decid_bio$LocalityName[decid_bio$LocalityName == "kongsvinger 2"] <- "kongsvinger_2"
+                pine_bio$LocalityName[pine_bio$LocalityName == "kongsvinger 2"] <- "kongsvinger_2"
+                spruce_bio$LocalityName[spruce_bio$LocalityName == "kongsvinger 2"] <- "kongsvinger_2"
+                
+                #Maarud 1
+                total_bio$LocalityName[total_bio$LocalityName == "maarud 1"] <- "maarud_1"
+                decid_bio$LocalityName[decid_bio$LocalityName == "maarud 1"] <- "maarud_1"
+                pine_bio$LocalityName[pine_bio$LocalityName == "maarud 1"] <- "maarud_1"
+                spruce_bio$LocalityName[spruce_bio$LocalityName == "maarud 1"] <- "maarud_1"
+                
+                #Maarud 2
+                total_bio$LocalityName[total_bio$LocalityName == "maarud 2"] <- "maarud_2"
+                decid_bio$LocalityName[decid_bio$LocalityName == "maarud 2"] <- "maarud_2"
+                pine_bio$LocalityName[pine_bio$LocalityName == "maarud 2"] <- "maarud_2"
+                spruce_bio$LocalityName[spruce_bio$LocalityName == "maarud 2"] <- "maarud_2"
+                
+                #Maarud 3
+                total_bio$LocalityName[total_bio$LocalityName == "maarud 3"] <- "maarud_3"
+                decid_bio$LocalityName[decid_bio$LocalityName == "maarud 3"] <- "maarud_3"
+                pine_bio$LocalityName[pine_bio$LocalityName == "maarud 3"] <- "maarud_3"
+                spruce_bio$LocalityName[spruce_bio$LocalityName == "maarud 3"] <- "maarud_3"
+                
+                #Nes 1
+                total_bio$LocalityName[total_bio$LocalityName == "nes 1"] <- "nes_1"
+                decid_bio$LocalityName[decid_bio$LocalityName == "nes 1"] <- "nes_1"
+                pine_bio$LocalityName[pine_bio$LocalityName == "nes 1"] <- "nes_1"
+                spruce_bio$LocalityName[spruce_bio$LocalityName == "nes 1"] <- "nes_1"
+                
+                #Nes 2
+                total_bio$LocalityName[total_bio$LocalityName == "nes 2"] <- "nes_2"
+                decid_bio$LocalityName[decid_bio$LocalityName == "nes 2"] <- "nes_2"
+                pine_bio$LocalityName[pine_bio$LocalityName == "nes 2"] <- "nes_2"
+                spruce_bio$LocalityName[spruce_bio$LocalityName == "nes 2"] <- "nes_2"
+                
+                #Sørum 1
+                total_bio$LocalityName[total_bio$LocalityName == "sørum 1"] <- "sorum_1"
+                decid_bio$LocalityName[decid_bio$LocalityName == "sørum 1"] <- "sorum_1"
+                pine_bio$LocalityName[pine_bio$LocalityName == "sørum 1"] <- "sorum_1"
+                spruce_bio$LocalityName[spruce_bio$LocalityName == "sørum 1"] <- "sorum_1"
+                
+                
+                
+                
 #END INITIAL DATA IMPORT --------------------------------------------------------------------------------
         
         
@@ -33,323 +98,215 @@
 
 
 
-#CREATE PLOT-LEVEL AVERAGES OF TOTAL BIOMASS ------------------------------------------------------------------
-        
-        #(1) Sum total biomass (g) for EACH SUBPLOT (doing this first to calculate kg/m2 biomass for each subplot
-        #    will take an average of subplot biomass later)
-        
-                #Sum biomass in each subplot
-                subplot_df <- aggregate(biomass$Subplot_Total_Biomass_g, by = list("Region" = biomass$Region,
-                                                                                   "LocalityName" = biomass$LocalityName,
-                                                                                   "LocalityCode" = biomass$LocalityCode,
-                                                                                   "Treatment" = biomass$Treatment,
-                                                                                   "Plot" = biomass$Plot,
-                                                                                   "Years_Since_Exclosure" = biomass$Years_Since_Exclosure), FUN = sum)
+#PREP DATA FOR PLOTTING ------------------------------------------------------------------
                 
-                colnames(subplot_df)[7] <- "Total_Biomass_kg"
-        
-                #Convert summed biomass g to kg
-                subplot_df$Total_Biomass_kg <- subplot_df$Total_Biomass_kg / 1000
+        #Get coniferous biomass column -----
                 
-                #Convert biomass to kg/m2
+                #Make copy
+                data <- total_bio
                 
-                        #Each circular subplot has a radius of 2m - A = pi*r^2
-        
-                                #Square meters
-                                subplot_area <- pi*(2^2) #12.57m2
-        
-                        #Divide each value for kg by plot_area
-        
-                                #Square meters
-                                subplot_df$Total_Biomass_kg_m2 <- subplot_df$Total_Biomass_kg / subplot_area 
-        
-                                        #Now we have TOTAL BIOMASS per unit area (both in kg/m2) for EACH CIRCULAR
-                                        #SUBPLOT in a given plot
-        
-                                        #We can then take the average of biomass within each subplot for each PLOT
-        
-        #(2) Get average biomass (kg & kg/m2) for each PLOT (take mean of all subplots in a given plot)
-        
-                #Aggregate means by plot
-        
-                        #kg
-                        biomass_plot_means <- aggregate(subplot_df$Total_Biomass_kg, by = list("Region" = subplot_df$Region,
-                                                                                               "LocalityName" = subplot_df$LocalityName,
-                                                                                               "LocalityCode" = subplot_df$LocalityCode,
-                                                                                               "Treatment" = subplot_df$Treatment,
-                                                                                               "Years_Since_Exclosure" = subplot_df$Years_Since_Exclosure), FUN = mean)
-                        colnames(biomass_plot_means)[6] <- "Mean_Plot_Biomass_kg"
+                #Placeholder df's
+                data$Decid_Bio <- as.numeric('')
+                data$Pine_Bio <- as.numeric('')
+                data$Spruce_Bio <- as.numeric('')
+                
+                #Loop and add
+                for(i in 1:nrow(data)){
                         
-                        #kg/m2
-                        biomass_plot_means_m2 <- aggregate(subplot_df$Total_Biomass_kg_m2, by = list("Region" = subplot_df$Region,
-                                                                                                     "LocalityName" = subplot_df$LocalityName,
-                                                                                                     "LocalityCode" = subplot_df$LocalityCode,
-                                                                                                     "Treatment" = subplot_df$Treatment,
-                                                                                                     "Years_Since_Exclosure" = subplot_df$Years_Since_Exclosure), FUN = mean)
-                        colnames(biomass_plot_means_m2)[6] <- "Mean_Plot_Biomass_kg_m2"
+                        #Get variables
+                        loc <- data[i, "LocalityCode"]
+                        yr <- data[i, "Years_Since_Exclosure"]
                         
-                        #Join columns into one df
-                        biomass_plot_means <- cbind(biomass_plot_means, biomass_plot_means_m2$Mean_Plot_Biomass_kg_m2)
-                        colnames(biomass_plot_means)[7] <- "Mean_Plot_Biomass_kg_m2"
+                        #Get additional bio values
                         
-                        #Fix "stangeskovene eidskog " space issue
-                        biomass_plot_means$LocalityName[biomass_plot_means$LocalityName == 'stangeskovene eidskog '] <- 'stangeskovene_eidskog'
-        
+                        #Deciduous bio (w/ error catcher)
+                        d <- decid_bio$Mean_Plot_Decid_Biomass_kg_m2[decid_bio$LocalityCode == loc & decid_bio$Years_Since_Exclosure == yr]
+                        if(length(d) == 0){
+                                d <- 0
+                        }
                         
-        #WRITE CSV OF PLOT-LEVEL BIOMASS
-        write.csv(biomass_plot_means, '1_Albedo_Exclosures/1_Data_Processing/2_Biomass_Estimates/Output/plot_biomass.csv')
-        
-#END CREATE PLOT-LEVEL AVERAGES OF TOTAL BIOMASS --------------------------------------------------------------
-        
-        
-        
-        
-#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-
-
-
-
-#CREATE PLOT-LEVEL AVERAGES OF DECIDUOUS BIOMASS ------------------------------------------------------------------
-        
-        #(1) Sum deciduous biomass (g) for EACH SUBPLOT (doing this first to calculate kg/m2 biomass for each subplot
-        #    will take an average of subplot biomass later)
-        
-                #Get vector of all taxa
-                all_taxa <- levels(as.factor(biomass$Taxa))
-        
-                #Isolate to deciduous taxa
-                decid_taxa <- all_taxa[c(1,2,6,7)]
-        
-                #Isolate 'deciduous' trees to aggregate
-                decid <- biomass[biomass$Taxa %in% decid_taxa,]
-        
-                #Sum biomass in each subplot
-                subplot_decid <- aggregate(decid$Subplot_Total_Biomass_g, by = list("Region" = decid$Region,
-                                                                                   "LocalityName" = decid$LocalityName,
-                                                                                   "LocalityCode" = decid$LocalityCode,
-                                                                                   "Treatment" = decid$Treatment,
-                                                                                   "Plot" = decid$Plot,
-                                                                                   "Years_Since_Exclosure" = decid$Years_Since_Exclosure), FUN = sum)
-        
-                colnames(subplot_decid)[7] <- "Total_Decid_Biomass_kg"
-        
-                #Convert summed biomass g to kg
-                subplot_decid$Total_Decid_Biomass_kg <- subplot_decid$Total_Decid_Biomass_kg / 1000
-        
-                #Convert biomass to kg/m2
-        
-                        #Each circular subplot has a radius of 2m - A = pi*r^2
-        
-                                #Square meters
-                                subplot_area <- pi*(2^2) #12.57m2
-        
-                        #Divide each value for kg by plot_area
-        
-                        #Square meters
-                        subplot_decid$Total_Decid_Biomass_kg_m2 <- subplot_decid$Total_Decid_Biomass_kg / subplot_area 
-        
-                                #Now we have TOTAL DECIDUOUS BIOMASS per unit area (both in kg/m2) for EACH CIRCULAR
-                                #SUBPLOT in a given plot
-        
-                                #We can then take the average of biomass within each subplot for each PLOT
-        
-        #(2) Get average deciduous biomass (kg & kg/m2) for each PLOT (take mean of all subplots in a given plot)
-        
-                #Aggregate means by plot
-        
-                        #kg
-                        biomass_d_plot_means <- aggregate(subplot_decid$Total_Decid_Biomass_kg, by = list("Region" = subplot_decid$Region,
-                                                                                               "LocalityName" = subplot_decid$LocalityName,
-                                                                                               "LocalityCode" = subplot_decid$LocalityCode,
-                                                                                               "Treatment" = subplot_decid$Treatment,
-                                                                                               "Years_Since_Exclosure" = subplot_decid$Years_Since_Exclosure), FUN = mean)
-                        colnames(biomass_d_plot_means)[6] <- "Mean_Plot_Decid_Biomass_kg"
-        
-                        #kg/m2
-                        biomass_d_plot_means_m2 <- aggregate(subplot_decid$Total_Decid_Biomass_kg_m2, by = list("Region" = subplot_decid$Region,
-                                                                                                     "LocalityName" = subplot_decid$LocalityName,
-                                                                                                     "LocalityCode" = subplot_decid$LocalityCode,
-                                                                                                     "Treatment" = subplot_decid$Treatment,
-                                                                                                     "Years_Since_Exclosure" = subplot_decid$Years_Since_Exclosure), FUN = mean)
-                        colnames(biomass_d_plot_means_m2)[6] <- "Mean_Plot_Decid_Biomass_kg_m2"
+                        #Pine bio
+                        p <- pine_bio$Mean_Plot_Pine_Biomass_kg_m2[pine_bio$LocalityCode == loc & pine_bio$Years_Since_Exclosure == yr]
+                        if(length(p) == 0){
+                                p <- 0
+                        }
                         
-                #Join columns into one df
-                biomass_d_plot_means <- cbind(biomass_d_plot_means, biomass_d_plot_means_m2$Mean_Plot_Decid_Biomass_kg_m2)
-                colnames(biomass_d_plot_means)[7] <- "Mean_Plot_Decid_Biomass_kg_m2"
-        
-        #Fix "stangeskovene eidskog " space issue
-        biomass_d_plot_means$LocalityName[biomass_d_plot_means$LocalityName == 'stangeskovene eidskog '] <- 'stangeskovene_eidskog'
-        
-        
-        #WRITE CSV OF PLOT-LEVEL BIOMASS
-        write.csv(biomass_d_plot_means, '1_Albedo_Exclosures/1_Data_Processing/2_Biomass_Estimates/Output/plot_decid_biomass.csv')
-        
-        
-#END CREATE PLOT-LEVEL AVERAGES OF DECIDUOUS BIOMASS ------------------------------------------------------------------        
-        
-        
-        
-        
-#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-        
-        
-        
-        
-#CREATE PLOT-LEVEL AVERAGES OF PINE BIOMASS ------------------------------------------------------------------
-        
-        #(1) Sum pine biomass (g) for EACH SUBPLOT (doing this first to calculate kg/m2 biomass for each subplot
-        #    will take an average of subplot biomass later)
-        
-                #Isolate to deciduous taxa
-                pine_taxa <- all_taxa[5]
-                
-                #Isolate pine trees to aggregate
-                pine <- biomass[biomass$Taxa %in% pine_taxa,]
-                
-                #Sum biomass in each subplot
-                subplot_pine <- aggregate(pine$Subplot_Total_Biomass_g, by = list("Region" = pine$Region,
-                                                                                    "LocalityName" = pine$LocalityName,
-                                                                                    "LocalityCode" = pine$LocalityCode,
-                                                                                    "Treatment" = pine$Treatment,
-                                                                                    "Plot" = pine$Plot,
-                                                                                    "Years_Since_Exclosure" = pine$Years_Since_Exclosure), FUN = sum)
-                
-                colnames(subplot_pine)[7] <- "Total_Pine_Biomass_kg"
-                
-                #Convert summed biomass g to kg
-                subplot_pine$Total_Pine_Biomass_kg <- subplot_pine$Total_Pine_Biomass_kg / 1000
-                
-                #Convert biomass to kg/m2
-        
-                        #Each circular subplot has a radius of 2m - A = pi*r^2
+                        #Spruce bio
+                        s <- spruce_bio$Mean_Plot_Spruce_Biomass_kg_m2[spruce_bio$LocalityCode == loc & spruce_bio$Years_Since_Exclosure == yr]
+                        if(length(s) == 0){
+                                s <- 0
+                        }
                         
-                                #Square meters
-                                subplot_area <- pi*(2^2) #12.57m2
+                        #Add to df
+                        data[i, "Decid_Bio"] <- d
+                        data[i, "Pine_Bio"] <- p
+                        data[i, "Spruce_Bio"] <- s
                         
-                        #Divide each value for kg by plot_area
+                }
+                
+                #Add pine + spruce
+                data$Conif_Bio <- data$Pine_Bio + data$Spruce_Bio
+                
+                
+        #Average + SE by treatment & year -----
+                
+                #TOTAL BIO -------
+                
+                        #Average -----
+                        tot_avg <- aggregate(data$Mean_Plot_Biomass_kg_m2, by = list("Treatment" = data$Treatment,
+                                                                                          "Years_Since_Exclosure" = data$Years_Since_Exclosure),
+                                             FUN = mean)
+                        colnames(tot_avg)[3] <- "Avg_Bio"
                         
-                                #Square meters
-                                subplot_pine$Total_Pine_Biomass_kg_m2 <- subplot_pine$Total_Pine_Biomass_kg / subplot_area 
+                        #Bio Type -----
+                        tot_avg$Bio_Type <- "Total"
                         
-                                #Now we have TOTAL PINE BIOMASS per unit area (both in kg/m2) for EACH CIRCULAR
-                                #SUBPLOT in a given plot
-        
-                                #We can then take the average of biomass within each subplot for each PLOT
-        
-        #(2) Get average pine biomass (kg & kg/m2) for each PLOT (take mean of all subplots in a given plot)
-        
-                #Aggregate means by plot
-                
-                        #kg
-                        biomass_p_plot_means <- aggregate(subplot_pine$Total_Pine_Biomass_kg, by = list("Region" = subplot_pine$Region,
-                                                                                                          "LocalityName" = subplot_pine$LocalityName,
-                                                                                                          "LocalityCode" = subplot_pine$LocalityCode,
-                                                                                                          "Treatment" = subplot_pine$Treatment,
-                                                                                                          "Years_Since_Exclosure" = subplot_pine$Years_Since_Exclosure), FUN = mean)
-                        colnames(biomass_p_plot_means)[6] <- "Mean_Plot_Pine_Biomass_kg"
-                        
-                        #kg/m2
-                        biomass_p_plot_means_m2 <- aggregate(subplot_pine$Total_Pine_Biomass_kg_m2, by = list("Region" = subplot_pine$Region,
-                                                                                                                "LocalityName" = subplot_pine$LocalityName,
-                                                                                                                "LocalityCode" = subplot_pine$LocalityCode,
-                                                                                                                "Treatment" = subplot_pine$Treatment,
-                                                                                                                "Years_Since_Exclosure" = subplot_pine$Years_Since_Exclosure), FUN = mean)
-                        colnames(biomass_p_plot_means_m2)[6] <- "Mean_Plot_Pine_Biomass_kg_m2"
-        
-                #Join columns into one df
-                biomass_p_plot_means <- cbind(biomass_p_plot_means, biomass_p_plot_means_m2$Mean_Plot_Pine_Biomass_kg_m2)
-                colnames(biomass_p_plot_means)[7] <- "Mean_Plot_Pine_Biomass_kg_m2"
-                
-                #Fix "stangeskovene eidskog " space issue
-                biomass_p_plot_means$LocalityName[biomass_p_plot_means$LocalityName == 'stangeskovene eidskog '] <- 'stangeskovene_eidskog'
-                
-                
-        #WRITE CSV OF PLOT-LEVEL BIOMASS
-        write.csv(biomass_p_plot_means, '1_Albedo_Exclosures/1_Data_Processing/2_Biomass_Estimates/Output/plot_pine_biomass.csv')
-        
-        
-#END CREATE PLOT-LEVEL AVERAGES OF PINE BIOMASS ------------------------------------------------------------------        
-        
-        
-        
-        
-#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-        
-        
-        
-        
-#CREATE PLOT-LEVEL AVERAGES OF SPRUCE BIOMASS ------------------------------------------------------------------
-        
-        #(1) Sum spruce biomass (g) for EACH SUBPLOT (doing this first to calculate kg/m2 biomass for each subplot
-        #    will take an average of subplot biomass later)
-        
-                #Isolate to deciduous taxa
-                spruce_taxa <- all_taxa[3:4]
-                
-                #Isolate spruce trees to aggregate
-                spruce <- biomass[biomass$Taxa %in% spruce_taxa,]
-                
-                #Sum biomass in each subplot
-                subplot_spruce <- aggregate(spruce$Subplot_Total_Biomass_g, by = list("Region" = spruce$Region,
-                                                                                  "LocalityName" = spruce$LocalityName,
-                                                                                  "LocalityCode" = spruce$LocalityCode,
-                                                                                  "Treatment" = spruce$Treatment,
-                                                                                  "Plot" = spruce$Plot,
-                                                                                  "Years_Since_Exclosure" = spruce$Years_Since_Exclosure), FUN = sum)
-                
-                colnames(subplot_spruce)[7] <- "Total_Spruce_Biomass_kg"
-        
-                #Convert summed biomass g to kg
-                subplot_spruce$Total_Spruce_Biomass_kg <- subplot_spruce$Total_Spruce_Biomass_kg / 1000
-        
-                #Convert biomass to kg/m2
-        
-                        #Each circular subplot has a radius of 2m - A = pi*r^2
-                
-                                #Square meters
-                                subplot_area <- pi*(2^2) #12.57m2
-        
-                        #Divide each value for kg by plot_area
-        
-                                #Square meters
-                                subplot_spruce$Total_Spruce_Biomass_kg_m2 <- subplot_spruce$Total_Spruce_Biomass_kg / subplot_area 
-        
-                                #Now we have TOTAL SPRUCE BIOMASS per unit area (both in kg/m2) for EACH CIRCULAR
-                                #SUBPLOT in a given plot
+                        #SE -----
                                 
-                                #We can then take the average of biomass within each subplot for each PLOT
-        
-        #(2) Get average spruce biomass (kg & kg/m2) for each PLOT (take mean of all subplots in a given plot)
-        
-                #Aggregate means by plot
+                                std <- function(x) sd(x)/sqrt(length(x))
+                                
+                                #Add placeholder columns
+                                tot_avg$SE <- as.numeric('')
+                                
+                                #Calculate SEs for each species/group, month, and year
+                                for(i in 1:nrow(tot_avg)){
+                                        
+                                        #Get variables
+                                        tr <- tot_avg[i, "Treatment"]
+                                        yse <- tot_avg[i, "Years_Since_Exclosure"]
+                                        
+                                        #Calculate SE for albedo
+                                        se <- std(data$Mean_Plot_Biomass_kg_m2[data$Treatment == tr &
+                                                                              data$Years_Since_Exclosure == yse])
+                                        
+                                        #Add to df
+                                        tot_avg[i, "SE"] <- se
+                                        
+                                }
+                                
+                                
+                                
+                #DECID BIO -------
+                                
+                        #Average -----
+                        d_avg <- aggregate(data$Decid_Bio, by = list("Treatment" = data$Treatment,
+                                                                                          "Years_Since_Exclosure" = data$Years_Since_Exclosure),
+                                             FUN = mean)
+                        colnames(d_avg)[3] <- "Avg_Bio"
+                        
+                        #Bio Type -----
+                        d_avg$Bio_Type <- "Deciduous"
+                        
+                        #SE -----
+                        
+                                std <- function(x) sd(x)/sqrt(length(x))
+                                
+                                #Add placeholder columns
+                                d_avg$SE <- as.numeric('')
+                                
+                                #Calculate SEs for each species/group, month, and year
+                                for(i in 1:nrow(d_avg)){
+                                        
+                                        #Get variables
+                                        tr <- d_avg[i, "Treatment"]
+                                        yse <- d_avg[i, "Years_Since_Exclosure"]
+                                        
+                                        #Calculate SE for albedo
+                                        se <- std(data$Decid_Bio[data$Treatment == tr &
+                                                                         data$Years_Since_Exclosure == yse])
+                                        
+                                        #Add to df
+                                        d_avg[i, "SE"] <- se
+                                        
+                                }
+                                
+                                
+                #CONIF BIO -------
+                                
+                        #Average -----
+                        c_avg <- aggregate(data$Conif_Bio, by = list("Treatment" = data$Treatment,
+                                                                     "Years_Since_Exclosure" = data$Years_Since_Exclosure),
+                                           FUN = mean)
+                        colnames(c_avg)[3] <- "Avg_Bio"
+                        
+                        #Bio Type -----
+                        c_avg$Bio_Type <- "Coniferous"
+                        
+                        #SE -----
+                        
+                                std <- function(x) sd(x)/sqrt(length(x))
+                                
+                                #Add placeholder columns
+                                c_avg$SE <- as.numeric('')
+                                
+                                #Calculate SEs for each species/group, month, and year
+                                for(i in 1:nrow(c_avg)){
+                                        
+                                        #Get variables
+                                        tr <- c_avg[i, "Treatment"]
+                                        yse <- c_avg[i, "Years_Since_Exclosure"]
+                                        
+                                        #Calculate SE for albedo
+                                        se <- std(data$Conif_Bio[data$Treatment == tr &
+                                                                         data$Years_Since_Exclosure == yse])
+                                        
+                                        #Add to df
+                                        c_avg[i, "SE"] <- se
+                                        
+                                }
+                                
+                                
+                #BIND TOGETHER INTO SINGLE DF --------
+                final <- rbind(tot_avg, d_avg, c_avg)
+                                
+                #Reorder factor
+                final$Bio_Type <- factor(final$Bio_Type, levels = c("Total", "Deciduous", "Coniferous"))
                 
-                #kg
-                biomass_s_plot_means <- aggregate(subplot_spruce$Total_Spruce_Biomass_kg, by = list("Region" = subplot_spruce$Region,
-                                                                                                "LocalityName" = subplot_spruce$LocalityName,
-                                                                                                "LocalityCode" = subplot_spruce$LocalityCode,
-                                                                                                "Treatment" = subplot_spruce$Treatment,
-                                                                                                "Years_Since_Exclosure" = subplot_spruce$Years_Since_Exclosure), FUN = mean)
-                colnames(biomass_s_plot_means)[6] <- "Mean_Plot_Spruce_Biomass_kg"
                 
-                #kg/m2
-                biomass_s_plot_means_m2 <- aggregate(subplot_spruce$Total_Spruce_Biomass_kg_m2, by = list("Region" = subplot_spruce$Region,
-                                                                                                      "LocalityName" = subplot_spruce$LocalityName,
-                                                                                                      "LocalityCode" = subplot_spruce$LocalityCode,
-                                                                                                      "Treatment" = subplot_spruce$Treatment,
-                                                                                                      "Years_Since_Exclosure" = subplot_spruce$Years_Since_Exclosure), FUN = mean)
-                colnames(biomass_s_plot_means_m2)[6] <- "Mean_Plot_Spruce_Biomass_kg_m2"
-        
-                #Join columns into one df
-                biomass_s_plot_means <- cbind(biomass_s_plot_means, biomass_s_plot_means_m2$Mean_Plot_Spruce_Biomass_kg_m2)
-                colnames(biomass_s_plot_means)[7] <- "Mean_Plot_Spruce_Biomass_kg_m2"
+#END PREP DATA FOR PLOTTING ------------------------------------------------------------------
                 
-                #Fix "stangeskovene eidskog " space issue
-                biomass_s_plot_means$LocalityName[biomass_s_plot_means$LocalityName == 'stangeskovene eidskog '] <- 'stangeskovene_eidskog'
                 
+                
+                
+#\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+
+
+
+#GENERATE FINAL PLOTS ----------------------------------------------------------------------
         
-        #WRITE CSV OF PLOT-LEVEL BIOMASS
-        write.csv(biomass_s_plot_means, '1_Albedo_Exclosures/1_Data_Processing/2_Biomass_Estimates/Output/plot_spruce_biomass.csv')
+        #Generate plot
+        pd <- position_dodge(0.5)
+                                
+        #Treatment nice names (for plotting)
+        final$TNN[final$Treatment == "B"] <- "Browsed"
+        final$TNN[final$Treatment == "UB"] <- "Unbrowsed"
         
+        #Plot                  
+        ggplot(data = final, aes(x = Years_Since_Exclosure, y = Avg_Bio, color = TNN, group = TNN)) +
+                geom_errorbar(aes(ymin = (Avg_Bio - SE), ymax = (Avg_Bio + SE)), colour="#666666", width=0.5, position = pd) +
+                geom_point(aes(shape = TNN), position = pd) +
+                geom_line(aes(linetype = TNN), position = pd) +
+                facet_wrap(~ Bio_Type, ncol = 2) +
+                labs(x = "Years Since Exclosure", y = "Biomass "~(kg/m^2), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
+                scale_x_continuous(breaks = c(1,3,5,7,9,11)) +
+                scale_color_manual(values = viridis(n = 2, alpha = 1, begin = 0, end = 0.6)) +
+                theme_bw() +
+                theme(
+                        panel.grid.minor = element_blank(),
+                        axis.title.x = element_text(margin = margin(t = 10)),
+                        axis.title.y = element_text(margin = margin(r = 10)),
+                        legend.position = c(0.75,0.24),
+                        legend.background = element_rect(fill="#fafafa",
+                                                         size=0.1, linetype="solid", 
+                                                         colour ="#666666"),
+                        legend.margin = margin(10,10,10,10)
+                )
         
-#END CREATE PLOT-LEVEL AVERAGES OF SPRUCE BIOMASS ------------------------------------------------------------------        
-        
+
+                
+
+                
+#END GENERATE FINAL PLOTS ------------------------------------------------------------------
+                
+ 
