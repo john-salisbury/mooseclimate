@@ -430,7 +430,7 @@
                 g1 <- ggplot(reg_means, aes(x = Month, y = Temperature_K, color = Region, fill = Region)) +
                         geom_ribbon(aes(ymin = (Temperature_K - Temperature_SE), ymax = (Temperature_K + Temperature_SE)), alpha = 0.5, lwd = 0.1) +
                         geom_line() +
-                        geom_point(size = 0.5) +
+                        geom_point(size = 1) +
                         labs(x = "Month", y = "Temperature (K)") + 
                         theme_bw() +
                         scale_x_continuous(limits = c(1, 12), breaks = c(1:12)) +
@@ -454,7 +454,7 @@
                 g2 <- ggplot(reg_means, aes(x = Month, y = SWE_mm, color = Region, fill = Region)) +
                         geom_ribbon(aes(ymin = (SWE_mm - SWE_SE), ymax = (SWE_mm + SWE_SE)), alpha = 0.5, lwd = 0.1) +
                         geom_line() +
-                        geom_point(size = 0.5) +
+                        geom_point(size = 1) +
                         labs(x = "Month", y = "SWE (mm)") + 
                         theme_bw() +
                         ggtitle("(b)") +
@@ -488,7 +488,7 @@
                         gl <- ggplot(reg_means, aes(x = Month, y = SWE_mm, color = Region)) +
                                 geom_ribbon(aes(ymin = (Temperature_K - Temperature_SE), ymax = (Temperature_K + Temperature_SE)), alpha = 0.5, lwd = 0.1) +
                                 geom_line() +
-                                geom_point(size = 0.5) +
+                                geom_point(size = 1.1) +
                                 labs(x = "Month", y = "SWE (mm)") + 
                                 theme_bw() +
                                 scale_x_continuous(limits = c(1, 12), breaks = c(1:12)) +
@@ -512,9 +512,11 @@
                         shared_legend <- extract_legend(gl)
                         
                         top_row <- plot_grid(g1, NULL, g2, ncol = 3, rel_widths = c(0.475, 0.05, 0.475))
-                        complex_plot <- plot_grid(top_row, NULL, shared_legend, ncol = 1, rel_heights = c(0.65, 0.04, 0.1))
+                        complex_plot <- plot_grid(top_row, NULL, shared_legend, ncol = 1, rel_heights = c(0.75, 0.04, 0.1))
                         complex_plot
-                
+                        
+                        complex_stacked <- plot_grid(g1, NULL, g2, NULL, shared_legend, ncol = 1, rel_heights = c(0.45, 0.025, 0.45, 0.025, 0.05))
+                        complex_stacked
 
 #END COMPUTE AVERAGE T & SWE **BY REGION** -----------------------------
 
