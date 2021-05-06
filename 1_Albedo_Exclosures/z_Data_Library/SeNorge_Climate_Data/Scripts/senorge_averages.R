@@ -419,6 +419,12 @@
                 
         #GENERATE PLOTS --------------
                 
+                #START HERE IF LOADING -----
+                reg_means <- read.csv('1_Albedo_Exclosures/z_Data_Library/SeNorge_Climate_Data/Averages/average_climate_data_by_region.csv', header = T)
+                
+                #Define discrete color-blind-friendly palette
+                pal <- c("#009E73", "#56B4e9", "#e69f00")
+                
                 
                 #TEMPERATURE
                 g1 <- ggplot(reg_means, aes(x = Month, y = Temperature_K, color = Region, fill = Region)) +
@@ -428,13 +434,16 @@
                         labs(x = "Month", y = "Temperature (K)") + 
                         theme_bw() +
                         scale_x_continuous(limits = c(1, 12), breaks = c(1:12)) +
-                        scale_color_manual(values = pal) +
-                        scale_fill_manual(values = pal) +
+                        scale_color_manual(values = c(pal[1], pal[2], pal[3])) +
+                        scale_fill_manual(values = c(pal[1], pal[2], pal[3])) +
+                        ggtitle("(a)") +
                         theme(
                                 legend.position = "none",
                                 axis.title.x = element_text(size = 12, margin = margin(t=10)),
                                 axis.title.y = element_text(size = 12, margin = margin(r=10)),
-                                panel.grid.minor = element_blank()
+                                panel.grid.minor = element_blank(),
+                                panel.grid.major.x = element_blank(),
+                                plot.title = element_text(face = "bold")
                         ) +
                         guides(fill = F) +
                         guides(color=guide_legend(override.aes=list(fill=pal[1:3])))
@@ -448,14 +457,17 @@
                         geom_point(size = 0.5) +
                         labs(x = "Month", y = "SWE (mm)") + 
                         theme_bw() +
+                        ggtitle("(b)") +
                         scale_x_continuous(limits = c(1, 12), breaks = c(1:12)) +
-                        scale_color_manual(values = pal) +
-                        scale_fill_manual(values = pal) +
+                        scale_color_manual(values = c(pal[1], pal[2], pal[3])) +
+                        scale_fill_manual(values = c(pal[1], pal[2], pal[3])) +
                         theme(
                                 legend.position = "none",
                                 axis.title.x = element_text(size = 12, margin = margin(t=10)),
                                 axis.title.y = element_text(size = 12, margin = margin(r=10)),
-                                panel.grid.minor = element_blank()
+                                panel.grid.minor = element_blank(),
+                                panel.grid.major.x = element_blank(),
+                                plot.title = element_text(face = "bold")
                         ) +
                         guides(fill = F) +
                         guides(color=guide_legend(override.aes=list(fill=pal[1:3])))
@@ -474,29 +486,33 @@
                         
                         #Sample plot for universal legend
                         gl <- ggplot(reg_means, aes(x = Month, y = SWE_mm, color = Region)) +
-                                #geom_ribbon(aes(ymin = (Temperature_K - Temperature_SE), ymax = (Temperature_K + Temperature_SE)), alpha = 0.5, lwd = 0.1) +
+                                geom_ribbon(aes(ymin = (Temperature_K - Temperature_SE), ymax = (Temperature_K + Temperature_SE)), alpha = 0.5, lwd = 0.1) +
                                 geom_line() +
                                 geom_point(size = 0.5) +
                                 labs(x = "Month", y = "SWE (mm)") + 
                                 theme_bw() +
                                 scale_x_continuous(limits = c(1, 12), breaks = c(1:12)) +
-                                scale_color_manual(values = pal) +
-                                scale_fill_manual(values = pal) +
+                                scale_color_manual(values = c(pal[1], pal[2], pal[3])) +
+                                scale_fill_manual(values = c(pal[1], pal[2], pal[3])) +
                                 theme(
                                         legend.position = "bottom",
                                         axis.title.x = element_text(size = 12, margin = margin(t=10)),
                                         axis.title.y = element_text(size = 12, margin = margin(r=10)),
-                                        panel.grid.minor = element_blank()
+                                        panel.grid.minor = element_blank(),
+                                        legend.background = element_rect(fill="#fafafa",
+                                                                         size=0.1, linetype="solid", 
+                                                                         colour ="#666666")
                                 ) +
-                                guides(fill = F) +
-                                guides(color=guide_legend(override.aes=list(fill=pal[1:3])))
+                                guides(color=guide_legend(override.aes=list(fill=pal[1:3]))) +
+                                guides(fill=guide_legend(override.aes=list(fill=pal[1:3])))
+                        
                         gl
                         
                         #Extract legend
                         shared_legend <- extract_legend(gl)
                         
                         top_row <- plot_grid(g1, NULL, g2, ncol = 3, rel_widths = c(0.475, 0.05, 0.475))
-                        complex_plot <- plot_grid(top_row, shared_legend, ncol = 1, rel_heights = c(0.65, 0.1))
+                        complex_plot <- plot_grid(top_row, NULL, shared_legend, ncol = 1, rel_heights = c(0.65, 0.04, 0.1))
                         complex_plot
                 
 

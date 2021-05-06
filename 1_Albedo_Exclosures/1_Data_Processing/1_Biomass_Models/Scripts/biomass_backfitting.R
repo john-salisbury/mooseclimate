@@ -8,6 +8,7 @@
         library(dplyr)
         library(tidyr)
         library(ggplot2)
+        library(cowplot)
         
         #Packages for models
         library(lme4)
@@ -569,106 +570,35 @@
         
         
 #EXPORT PLOTS --------------------------------------------------------------------------------------
-                              
-        #Pine
-                #Define equation:
-                pe <- paste("y == ", "0.027464*X^2", sep ="")  
-                
-                #Define R2 value:
-                pr <- paste("R^2 == ", "0.7015", sep ="")
-                
-               
-                png(filename = "1_Albedo_Exclosures/1_Data_Processing/1_Biomass_Models/Output/pine_backfit_model.png",
-                    width = 1000,
-                    height = 1000,
-                    units = "px",
-                    bg = "white")
                                 
-                ggplot(data = subset(t2016, Taxa == "Pinus sylvestris (Furu)" & Height_cm < 150), aes(x = Height_cm, y = Biomass_g)) +
-                        geom_point() +
-                        geom_smooth(method = "lm", formula = y ~ -1 + I(x^2), se = F, color = "black") +
-                        labs(x = "Height (cm)", y = "Modelled Biomass (g)") +
-                        ggtitle("Backfitted Biomass Model: Pinus Sylvestris") +
-                        theme_bw() +
-                        theme(plot.title = element_text(hjust = 0.5, size = 30, margin = margin(t = 40, b = 40)),
-                              legend.position = "none",
-                              axis.text.x = element_text(size = 20, margin = margin(t=16)),
-                              axis.text.y = element_text(size = 20, margin = margin(r=16)),
-                              axis.title.x = element_text(size = 30, margin = margin(t=40, b = 40)),
-                              axis.title.y = element_text(size = 30, margin = margin(r=40))) +
-                        annotate("text", x = 25, y = 500, size = 8, label = pe, parse=TRUE) +
-                        annotate("text", x = 25, y = 470, size = 8, label = pr, parse=TRUE)
-                        
-                                
-                dev.off()
-                                
-        #Spruce
-                
-                #Define equation:
-                se <- paste("y == ", "0.02014*X^2 + 0.00006086*X^3", sep ="")  
-                
-                #Define R2 value:
-                sr <- paste("R^2 == ", "0.9059", sep ="")
-                
-                
-                png(filename = "1_Albedo_Exclosures/1_Data_Processing/1_Biomass_Models/Output/spruce_backfit_model.png",
-                    width = 1000,
-                    height = 1000,
-                    units = "px",
-                    bg = "white")
-                
-                ggplot(data = subset(t2016, Taxa == "Picea abies (Gran)"), aes(x = Height_cm, y = Biomass_g)) +
-                        geom_point() +
-                        geom_smooth(method = "lm", formula = y ~ -1 + I(x^2) + I(x^3), se = F, color = "black") +
-                        labs(x = "Height (cm)", y = "Modelled Biomass (g)") +
-                        ggtitle("Backfitted Biomass Model: Picea abies") +
-                        theme_bw() +
-                        theme(plot.title = element_text(hjust = 0.5, size = 30, margin = margin(t = 40, b = 40)),
-                              legend.position = "none",
-                              axis.text.x = element_text(size = 20, margin = margin(t=16)),
-                              axis.text.y = element_text(size = 20, margin = margin(r=16)),
-                              axis.title.x = element_text(size = 30, margin = margin(t=40, b = 40)),
-                              axis.title.y = element_text(size = 30, margin = margin(r=40))) +
-                        annotate("text", x = 100, y = 15000, size = 8, label = se, parse=TRUE) +
-                        annotate("text", x = 100, y = 14100, size = 8, label = sr, parse=TRUE)
-                
-                
-                dev.off()
-                                
-        #Birch
-                
+        #Birch ------
+        
                 #Define equation:
                 be <- paste("y == ", "0.2072*X + 0.009974*X^2", sep ="")  
                 
                 #Define R2 value:
                 br <- paste("R^2 == ", "0.9898", sep ="")
                 
-                
-                png(filename = "1_Albedo_Exclosures/1_Data_Processing/1_Biomass_Models/Output/birch_backfit_model.png",
-                    width = 1000,
-                    height = 1000,
-                    units = "px",
-                    bg = "white")
-                
-                ggplot(data = subset(t2016, Taxa == "Betula pubescens (Bjørk)"), aes(x = Height_cm, y = Biomass_g)) +
-                        geom_point() +
+                g1 <- ggplot(data = subset(t2016, Taxa == "Betula pubescens (Bjørk)"), aes(x = Height_cm, y = Biomass_g)) +
+                        geom_point(shape = 1) +
                         geom_smooth(method = "lm", formula = y ~ -1 + poly(x, 2, raw = T), se = F, color = "black") +
                         labs(x = "Height (cm)", y = "Modelled Biomass (g)") +
-                        ggtitle("Backfitted Biomass Model: Betula pubescens") +
+                        ggtitle("(a)") +
                         theme_bw() +
-                        theme(plot.title = element_text(hjust = 0.5, size = 30, margin = margin(t = 40, b = 40)),
-                              legend.position = "none",
-                              axis.text.x = element_text(size = 20, margin = margin(t=16)),
-                              axis.text.y = element_text(size = 20, margin = margin(r=16)),
-                              axis.title.x = element_text(size = 30, margin = margin(t=40, b = 40)),
-                              axis.title.y = element_text(size = 30, margin = margin(r=40))) +
-                        annotate("text", x = 100, y = 2500, size = 8, label = be, parse=TRUE) +
-                        annotate("text", x = 100, y = 2325, size = 8, label = br, parse=TRUE)
+                        theme(
+                                legend.position = "none",
+                                axis.title.x = element_text(margin = margin(t = 10)),
+                                axis.title.y = element_text(margin = margin(r = 10)),
+                                plot.title = element_text(face = "bold"),
+                                panel.grid = element_blank()
+                        ) +
+                        annotate("text", x = 20, y = 3000, hjust = 0, vjust = 1, size = 3, label = paste(be, br, sep = "\n"), parse=TRUE) +
+                        annotate("text", x = 20, y = 2800, hjust = 0, vjust = 1, size = 3, label = br, parse=TRUE)
+                g1
                 
                 
-                dev.off()
-                                
-        #Rowan
+                
+        #Rowan ------
                 
                 #Define equation:
                 re <- paste("y == ", "0.2620264*X + 0.005844*X^2", sep ="")  
@@ -676,29 +606,86 @@
                 #Define R2 value:
                 rr <- paste("R^2 == ", "0.8345", sep ="")
                 
-                
-                png(filename = "1_Albedo_Exclosures/1_Data_Processing/1_Biomass_Models/Output/rowan_backfit_model.png",
-                    width = 1000,
-                    height = 1000,
-                    units = "px",
-                    bg = "white")
-                
-                ggplot(data = subset(t2016, Taxa == "Sorbus aucuparia (Rogn)"), aes(x = Height_cm, y = Biomass_g)) +
-                        geom_point() +
+                g2 <- ggplot(data = subset(t2016, Taxa == "Sorbus aucuparia (Rogn)"), aes(x = Height_cm, y = Biomass_g)) +
+                        geom_point(shape = 1) +
                         geom_smooth(method = "lm", formula = y ~ -1 + poly(x, 2, raw = T), se = F, color = "black") +
                         labs(x = "Height (cm)", y = "Modelled Biomass (g)") +
-                        ggtitle("Backfitted Biomass Model: Sorbus aucuparia") +
+                        ggtitle("(b)") +
                         theme_bw() +
-                        theme(plot.title = element_text(hjust = 0.5, size = 30, margin = margin(t = 40, b = 40)),
+                        theme(
+                                legend.position = "none",
+                                axis.title.x = element_text(margin = margin(t = 10)),
+                                axis.title.y = element_text(margin = margin(r = 10)),
+                                plot.title = element_text(face = "bold"),
+                                panel.grid = element_blank()
+                        ) +
+                        annotate("text", x = 5, y = 124, hjust = 0, vjust = 1, size = 3, label = re, parse=TRUE) +
+                        annotate("text", x = 5, y = 115, hjust = 0, vjust = 1, size = 3, label = rr, parse=TRUE)
+                g2
+                
+
+        #Pine ------
+                
+                #Define equation:
+                pe <- paste("y == ", "0.027464*X^2", sep ="")  
+                
+                #Define R2 value:
+                pr <- paste("R^2 == ", "0.7015", sep ="")
+                
+                g3 <- ggplot(data = subset(t2016, Taxa == "Pinus sylvestris (Furu)" & Height_cm < 150), aes(x = Height_cm, y = Biomass_g)) +
+                        geom_point(shape = 1) +
+                        geom_smooth(method = "lm", formula = y ~ -1 + I(x^2), se = F, color = "black") +
+                        labs(x = "Height (cm)", y = "Modelled Biomass (g)") +
+                        ggtitle("(c)") +
+                        theme_bw() +
+                        theme(
                               legend.position = "none",
-                              axis.text.x = element_text(size = 20, margin = margin(t=16)),
-                              axis.text.y = element_text(size = 20, margin = margin(r=16)),
-                              axis.title.x = element_text(size = 30, margin = margin(t=40, b = 40)),
-                              axis.title.y = element_text(size = 30, margin = margin(r=40))) +
-                        annotate("text", x = 25, y = 122, size = 8, label = re, parse=TRUE) +
-                        annotate("text", x = 25, y = 115, size = 8, label = rr, parse=TRUE)
+                              axis.title.x = element_text(margin = margin(t = 10)),
+                              axis.title.y = element_text(margin = margin(r = 10)),
+                              plot.title = element_text(face = "bold"),
+                              panel.grid = element_blank()
+                              ) +
+                        annotate("text", x = 5, y = 580, hjust = 0, vjust = 1, size = 3, label = pe, parse=TRUE) +
+                        annotate("text", x = 5, y = 540, hjust = 0, vjust = 1, size = 3, label = pr, parse=TRUE)
+                g3
+                        
+                        
+        #Spruce -----
+                
+                #Define equation:
+                se <- paste("y == ", "0.02014*X^2 + 0.00006086*X^3", sep ="")  
+                
+                #Define R2 value:
+                sr <- paste("R^2 == ", "0.9059", sep ="")
+                
+                g4 <- ggplot(data = subset(t2016, Taxa == "Picea abies (Gran)"), aes(x = Height_cm, y = Biomass_g)) +
+                        geom_point(shape = 1) +
+                        geom_smooth(method = "lm", formula = y ~ -1 + I(x^2) + I(x^3), se = F, color = "black") +
+                        labs(x = "Height (cm)", y = "Modelled Biomass (g)") +
+                        ggtitle("(d)") +
+                        theme_bw() +
+                        theme(
+                                legend.position = "none",
+                                axis.title.x = element_text(margin = margin(t = 10)),
+                                axis.title.y = element_text(margin = margin(r = 10)),
+                                plot.title = element_text(face = "bold"),
+                                panel.grid = element_blank()
+                        ) +
+                        annotate("text", x = 15, y = 18000, hjust = 0, vjust = 1, size = 3, label = se, parse=TRUE) +
+                        annotate("text", x = 15, y = 16500, hjust = 0, vjust = 1, size = 3, label = sr, parse=TRUE)
+                
+                g4
                 
                 
-                dev.off()
+        #COMPLEX/PANELED PLOT -----
+                top <- plot_grid(g1, NULL, g2, ncol = 3, rel_widths = c(0.475, 0.05, 0.475))
+                bottom <- plot_grid(g3, NULL, g4, ncol = 3, rel_widths = c(0.475, 0.05, 0.475))
+                complex <- plot_grid(top, NULL, bottom, ncol = 1, rel_heights = c(0.475, 0.05, 0.475))
+                complex
+                
+                
+                
+        
+        
 
 #END EXPORT PLOTS ---------------------------------------------------------------------------------- 

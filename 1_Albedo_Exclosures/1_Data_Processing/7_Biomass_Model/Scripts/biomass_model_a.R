@@ -476,30 +476,17 @@
                                 AIC(model_a1, model_a2, model_a3)
                                 
                                         #AIC indicates that model_a2 is the best - thus, incorporating Region into random effects does not improve fit
+                                        #substantially. However, for consistency, I chose model_a1
                                 
-                                
-                        #RANDOM SLOPE AND INTERCEPT MODELS (Does 'years since exclosure' vs biomass differ between LocalityNames? Probably)
-                                
-                                #Add random slope and intercept to model_a1 above
-                                model_a4 <- lmer(log(Mean_Plot_Biomass_kg_m2) ~ Productivity_Index*Treatment*Years_Since_Exclosure +
-                                                         (1 + Years_Since_Exclosure | LocalityName),
-                                                 data = model_data,
-                                                 REML = T)
-                                
-                                #Compare two models - did adding random slope improve AIC?
-                                AIC(model_a1, model_a4) #Yes, substantially
-                                
-                                        #RANDOM STRUCTURE OF MODEL A4 IS "BEST" 
 
-                        
         #STEP 4: Compare nested models with AIC ---------
                         
                 #Re-fit model from Step 2 w/ ML (for comparison of fixed effects)
                         
                 model_a1 <- lmer(log(Mean_Plot_Biomass_kg_m2) ~ Productivity_Index*Treatment*Years_Since_Exclosure +
-                                         (1 + Years_Since_Exclosure | LocalityName),
+                                         (1 | Region/LocalityName),
                                  data = model_data,
-                                REML = F)
+                                 REML = F)
                 
                 #Nested Models (keeping terms/interactions of interest)
                 model_a2 <- lmer(log(Mean_Plot_Biomass_kg_m2) ~ Treatment +
@@ -508,7 +495,7 @@
                                          Treatment*Productivity_Index +
                                          Treatment*Years_Since_Exclosure +
                                          Productivity_Index*Years_Since_Exclosure +
-                                         (1 + Years_Since_Exclosure | LocalityName),
+                                         (1 | Region/LocalityName),
                                  data = model_data,
                                  REML = F)
                         
@@ -517,7 +504,7 @@
                                          Years_Since_Exclosure +
                                          Treatment*Productivity_Index +
                                          Treatment*Years_Since_Exclosure +
-                                         (1 + Years_Since_Exclosure | LocalityName),
+                                         (1 | Region/LocalityName),
                                  data = model_data,
                                  REML = F)
                         
@@ -526,7 +513,7 @@
                                          Years_Since_Exclosure +
                                          Treatment*Years_Since_Exclosure +
                                          Productivity_Index*Years_Since_Exclosure +
-                                         (1 + Years_Since_Exclosure | LocalityName),
+                                         (1 | Region/LocalityName),
                                  data = model_data,
                                  REML = F)
                         
@@ -535,14 +522,14 @@
                                          Productivity_Index +
                                          Years_Since_Exclosure +
                                          Treatment*Years_Since_Exclosure +
-                                         (1 + Years_Since_Exclosure | LocalityName),
+                                         (1 | Region/LocalityName),
                                  data = model_data,
                                  REML = F)
                         
                 model_a6 <- lmer(log(Mean_Plot_Biomass_kg_m2) ~ Treatment +
                                          Years_Since_Exclosure +
                                          Treatment*Years_Since_Exclosure +
-                                         (1 + Years_Since_Exclosure | LocalityName),
+                                         (1 | Region/LocalityName),
                                  data = model_data,
                                  REML = F)
 
@@ -564,7 +551,7 @@
                                               Treatment*Productivity_Index +
                                               Treatment*Years_Since_Exclosure +
                                               Productivity_Index*Years_Since_Exclosure +
-                                              (1 + Years_Since_Exclosure | LocalityName),
+                                              (1 | Region/LocalityName),
                                       data = model_data,
                                       REML = T)
                                 
@@ -576,32 +563,22 @@
                                     "Fitted" = fitted(final_model_a))
                         
                 #Normality of model residuals (histogram)
-                p1 <- ggplot(data = resid, aes(x = Residuals)) +
-                        geom_histogram(fill = "#b5b5b5", bins = 10) +
-                        theme_bw() +
-                        labs(x = "Model Residuals", y = "Frequency") +
-                        theme(
-                                axis.title.x = element_text(margin = margin(t = 10)),
-                                axis.title.y = element_text(margin = margin(r = 10))
-                        ) +
-                        geom_vline(xintercept = mean(resid$Residuals), linetype = 2)
+                p1 <- histogram(resid(final_model_a), main = "(a)", xlab = "Model Residuals", ylab = "% Total", col = "grey")
+                
                 
                 #Homoskedasticity of model residuals (residuals vs. model-fitted values)
-                p2 <- qqmath(resid(final_model_a))
-                p3 <- plot(final_model_a)
+                p2 <- qqmath(resid(final_model_a), main = "(b)", xlab = "Theoretical Quantiles", ylab = "Model Residuals")
+                p3 <- plot(final_model_a, main = "(c)", xlab = "Fitted Values", ylab = "Model Residuals")
                 p4 <- plot(final_model_a, sqrt(abs(resid(., scaled=TRUE))) ~ fitted(.),
-                           type = c("p", "smooth"))
-                p5 <- plot(final_model_a, resid(., scaled=TRUE) ~ fitted(.) | Treatment,
-                     abline = 0, type = c("p", "smooth"), layout = c(2,1))
+                           type = c("p", "smooth"), main = "(d)", xlab = "Fitted Values", ylab = "Std. Model Residuals")
                 
                 #Assemble complex plot
                 top_row <- plot_grid(p1, NULL, p2, ncol = 3, rel_widths = (c(0.45,0.1,0.45)))
                 middle_row <- plot_grid(p3, NULL, p4, ncol = 3, rel_widths = (c(0.45,0.1,0.45)))
-                bottom_row <- plot_grid(p5, NULL, NULL, ncol = 3, rel_widths = (c(0.45,0.1,0.45)))
                 
-                
-                complex_plot <- plot_grid(top_row, NULL, middle_row, NULL, bottom_row, ncol = 1, rel_heights = c(0.31, 0.035, 0.31, 0.035, 0.31))
+                complex_plot <- plot_grid(top_row, NULL, middle_row, ncol = 1, rel_heights = c(0.475, 0.05, 0.475))
                 complex_plot
+                
                 
                 
                                 
@@ -629,7 +606,7 @@
                                                Treatment*Productivity_Index +
                                                Treatment*Years_Since_Exclosure +
                                                Productivity_Index*Years_Since_Exclosure +
-                                               (1 + Years_Since_Exclosure | LocalityName),
+                                               (1 | Region/LocalityName),
                                        data = model_data,
                                        REML = T)
                         #New summary
@@ -722,21 +699,11 @@
                         #AIC Comparison
                         AIC(model_d1, model_d2, model_d3)
                         
-                                #Model D2 is the "best" fitting (similar to total biomass model)
+                                #Model D2 is the "best" fitting (similar to total biomass model) - however, for consistency
+                                #with total biomass model (and because D1 and D2 are within 2 AIC points), I'm going
+                                #with D1 (which includes region as a random effect)
                         
-                #RANDOM INTERCEPT SLOPE MODELS
-                        
-                        #Carried over
-                        model_d4 <- lmer(log(Decid_Bio) ~ Productivity_Index*Treatment*Years_Since_Exclosure +
-                                                 (1 + Years_Since_Exclosure | LocalityName),
-                                         data = decid_df,
-                                         REML = T)
-                        
-                        #AIC
-                        AIC(model_d1, model_d4) #Very similar AIC values
-                        
-                                #Going with model_d1 due to simpler structure
-                
+            
                         
         #STEP 4: AIC comparison of 'best model' with model w/ defined variance structure -------
                 
@@ -759,7 +726,7 @@
                 
                 #Re-run 'winning' model with ML (for nested comparison)
                 model_d1 <- lmer(log(Decid_Bio) ~ Productivity_Index*Treatment*Years_Since_Exclosure +
-                                         (1 | LocalityName),
+                                         (1 | Region/LocalityName),
                                  data = decid_df,
                                  REML = F)
                 
@@ -770,7 +737,7 @@
                                          Treatment*Productivity_Index +
                                          Treatment*Years_Since_Exclosure +
                                          Productivity_Index*Years_Since_Exclosure +
-                                         (1 | LocalityName),
+                                         (1 | Region/LocalityName),
                                  data = decid_df,
                                  REML = F)
                 
@@ -779,7 +746,7 @@
                                          Years_Since_Exclosure +
                                          Treatment*Productivity_Index +
                                          Treatment*Years_Since_Exclosure +
-                                         (1 | LocalityName),
+                                         (1 | Region/LocalityName),
                                  data = decid_df,
                                  REML = F)
                 
@@ -788,7 +755,7 @@
                                          Years_Since_Exclosure +
                                          Treatment*Years_Since_Exclosure +
                                          Productivity_Index*Years_Since_Exclosure +
-                                         (1 | LocalityName),
+                                         (1 | Region/LocalityName),
                                  data = decid_df,
                                  REML = F)
                 
@@ -796,14 +763,14 @@
                                          Productivity_Index +
                                          Years_Since_Exclosure +
                                          Treatment*Years_Since_Exclosure +
-                                         (1 | LocalityName),
+                                         (1 | Region/LocalityName),
                                  data = decid_df,
                                  REML = F)
                 
                 model_d6 <- lmer(log(Decid_Bio) ~ Treatment +
                                          Years_Since_Exclosure +
                                          Treatment*Years_Since_Exclosure +
-                                         (1 | LocalityName),
+                                         (1 | Region/LocalityName),
                                  data = decid_df,
                                  REML = F)
                 
@@ -812,7 +779,7 @@
                         
                 AIC(model_d1, model_d2, model_d3, model_d4, model_d5, model_d6)
                 
-                        #Model D1, D2, and D3 are very similar - D3 has the lowest AIC, so going with that
+                        #Model D1, D2, and D3 are very similar - D2 has the lowest AIC, so going with that
                
                 
                 
@@ -823,7 +790,8 @@
                                               Years_Since_Exclosure +
                                               Treatment*Productivity_Index +
                                               Treatment*Years_Since_Exclosure +
-                                              (1 | LocalityName),
+                                              Productivity_Index*Years_Since_Exclosure +
+                                              (1 | Region/LocalityName),
                                       data = decid_df,
                                       REML = T)
                 
@@ -835,32 +803,21 @@
                                     "Fitted" = fitted(final_model_d))
                 
                 #Normality of model residuals (histogram)
-                p1 <- ggplot(data = resid, aes(x = Residuals)) +
-                        geom_histogram(fill = "#b5b5b5", bins = 10) +
-                        theme_bw() +
-                        labs(x = "Model Residuals", y = "Frequency") +
-                        theme(
-                                axis.title.x = element_text(margin = margin(t = 10)),
-                                axis.title.y = element_text(margin = margin(r = 10))
-                        ) +
-                        geom_vline(xintercept = mean(resid$Residuals), linetype = 2)
+                p1 <- histogram(resid(final_model_d), main = "(a)", xlab = "Model Residuals", ylab = "% Total", col = "grey")
                 
                 #Homoskedasticity of model residuals (residuals vs. model-fitted values)
-                p2 <- qqmath(resid(final_model_d))
-                p3 <- plot(final_model_d)
+                p2 <- qqmath(resid(final_model_d), main = "(b)", xlab = "Theoretical Quantiles", ylab = "Model Residuals")
+                p3 <- plot(final_model_d, main = "(c)", xlab = "Fitted Values", ylab = "Model Residuals")
                 p4 <- plot(final_model_d, sqrt(abs(resid(., scaled=TRUE))) ~ fitted(.),
-                           type = c("p", "smooth"))
-                p5 <- plot(final_model_d, resid(., scaled=TRUE) ~ fitted(.) | Treatment,
-                           abline = 0, type = c("p", "smooth"), layout = c(2,1))
+                           type = c("p", "smooth"), main = "(d)", xlab = "Fitted Values", ylab = "Std. Model Residuals")
                 
                 #Assemble complex plot
                 top_row <- plot_grid(p1, NULL, p2, ncol = 3, rel_widths = (c(0.45,0.1,0.45)))
                 middle_row <- plot_grid(p3, NULL, p4, ncol = 3, rel_widths = (c(0.45,0.1,0.45)))
-                bottom_row <- plot_grid(p5, NULL, NULL, ncol = 3, rel_widths = (c(0.45,0.1,0.45)))
                 
-                
-                complex_plot <- plot_grid(top_row, NULL, middle_row, NULL, bottom_row, ncol = 1, rel_heights = c(0.31, 0.035, 0.31, 0.035, 0.31))
+                complex_plot <- plot_grid(top_row, NULL, middle_row, ncol = 1, rel_heights = c(0.475, 0.05, 0.475))
                 complex_plot
+                
                 
 
                 
@@ -887,16 +844,16 @@
                                       Years_Since_Exclosure +
                                       Treatment*Productivity_Index +
                                       Treatment*Years_Since_Exclosure +
-                                      (1 | LocalityName),
+                                      Productivity_Index*Years_Since_Exclosure +
+                                      (1 | Region/LocalityName),
                               data = decid_df,
                               REML = T)
                 
                 #New summary
                 summary(rerun)
                 
-                #Confidence intervals
-                m_ub_ci <- confint(rerun)      
-                        
+                #Confidence Intervals
+                m_ub_decid_ci <- confint(rerun, quiet = T)
                 
 #END DECIDUOUS BIOMASS MODEL --------------------------------------------------------------------------------------
         
@@ -912,6 +869,10 @@
 
 #NOTE: Pine has many zero values, which makes LMM's difficult. I'm going to try to condense into 
 #"coniferous biomass" (both pine and spruce biomass)
+                
+        #Re-load model data
+        model_data <- read.csv("1_Albedo_Exclosures/1_Data_Processing/7_Biomass_Model/Output/biomass_model_data.csv", header = T)
+        model_data$Treatment <- as.factor(model_data$Treatment)
 
         #Create a column in df w/ 'coniferous biomass'
         model_data$Conif_Bio <- model_data$Pine_Bio + model_data$Spruce_Bio
@@ -981,116 +942,63 @@
                         #AIC Comparison
                         AIC(model_c1, model_c2, model_c3)
                         
-                                #Model C2 has lowest AIC 
-                        
-                        
-                #RANDOM SLOPE INTERCEPT MODELS
-                        
-                        #Carried over
-                        model_c4 <- lmer(log(Conif_Bio) ~ Productivity_Index*Treatment*Years_Since_Exclosure +
-                                                 (1 + Years_Since_Exclosure | LocalityName),
-                                         data = conif_df,
-                                         REML = T)
-                        
-                        #AIC Comparison
-                        AIC(model_c2, model_c4) #Adding random slope substantially reduces AIC
-                        
-                                #Model C4 is the "best fitting" model
-                        
-                        
+                                #Model C2 has lowest AIC, but for consistency's sake, going to choose Model C1 
+                                #(since it is within two points of C2 and includes Region as random effect)
                         
 
-                        
-        #STEP 3: Try a defined variance structure to reduce heteroskedasticity --------
-                        
-                #Note: Using Zuur et al. (2009) as a reference
-                #Use 'nlme' package
-                library(nlme)
-                
-                #Visual
-                boxplot(resid(model_c4) ~ conif_df$Treatment)
-                plot(resid(model_c4) ~ conif_df$Years_Since_Exclosure)
-                        
-                #varIdent variance structure for different variance between regions
-                md1 <- lme(log(Conif_Bio) ~ Productivity_Index*Treatment*Years_Since_Exclosure,
-                           random = ~ 1 | LocalityName,
-                           weights = varIdent(form = ~ 1 | Region),
-                           data = conif_df,
-                           method = "REML")
-                
-
-        #STEP 4: AIC comparison of original model and model with defined variance structure ------
-                        
-                        #Re-define model with lme function
-                        md_o <- lme(log(Conif_Bio) ~ Treatment*Years_Since_Exclosure*Productivity_Index,
-                                    random = ~ 1 | LocalityName,
-                                    data = conif_df,
-                                    method = "REML")
-                        
-                        AIC(md_o, md1) #Adding varComb structure substantially reduced AIC value & improved residual plots
-                        
-                                #MD1 is "best fitting" plot
-                        
-                        
         #STEP 5: Compare nested models with AIC ---------
                         
                 #Re-fit model from Step 4 w/ ML (for comparison of fixed effects)
-                model_conif <- lme(log(Conif_Bio) ~ Productivity_Index*Treatment*Years_Since_Exclosure,
-                                   random = ~ 1 | LocalityName,
-                                   weights = varIdent(form = ~ 1 | Region),
-                                   data = conif_df,
-                                   method = "ML")
+                model_conif <- lmer(log(Conif_Bio) ~ Productivity_Index*Treatment*Years_Since_Exclosure +
+                                            (1 | LocalityName),
+                                    data = conif_df,
+                                    REML = F)
                 
                 #Nested models
                         
                         #MC1
-                        mc1 <- lme(log(Conif_Bio) ~ Treatment +
+                        mc1 <- lmer(log(Conif_Bio) ~ Treatment +
                                            Productivity_Index +
                                            Years_Since_Exclosure +
                                            Treatment*Productivity_Index +
                                            Treatment*Years_Since_Exclosure +
-                                           Productivity_Index*Years_Since_Exclosure,
-                                   random = ~ 1 | LocalityName,
-                                   weights = varIdent(form = ~ 1 | Region),
+                                           Productivity_Index*Years_Since_Exclosure +
+                                           (1 | LocalityName),
                                    data = conif_df,
-                                   method = "ML")
+                                   REML = F)
                         
-                        mc2 <- lme(log(Conif_Bio) ~ Treatment +
+                        mc2 <- lmer(log(Conif_Bio) ~ Treatment +
                                            Productivity_Index +
                                            Years_Since_Exclosure +
                                            Treatment*Productivity_Index +
-                                           Treatment*Years_Since_Exclosure,
-                                   random = ~ 1 | LocalityName,
-                                   weights = varIdent(form = ~ 1 | Region),
+                                           Treatment*Years_Since_Exclosure +
+                                           (1 | LocalityName),
                                    data = conif_df,
-                                   method = "ML")
+                                   REML = F)
                         
-                        mc3 <- lme(log(Conif_Bio) ~ Treatment +
+                        mc3 <- lmer(log(Conif_Bio) ~ Treatment +
                                            Productivity_Index +
                                            Years_Since_Exclosure +
                                            Treatment*Years_Since_Exclosure +
-                                           Productivity_Index*Years_Since_Exclosure,
-                                   random = ~ 1 | LocalityName,
-                                   weights = varIdent(form = ~ 1 | Region),
-                                   data = conif_df,
-                                   method = "ML")
+                                           Productivity_Index*Years_Since_Exclosure +
+                                            (1 | LocalityName),
+                                    data = conif_df,
+                                    REML = F)
                         
-                        mc4 <- lme(log(Conif_Bio) ~ Treatment +
+                        mc4 <- lmer(log(Conif_Bio) ~ Treatment +
                                            Productivity_Index +
                                            Years_Since_Exclosure +
-                                           Treatment*Years_Since_Exclosure,
-                                   random = ~ 1 | LocalityName,
-                                   weights = varIdent(form = ~ 1 | Region),
+                                           Treatment*Years_Since_Exclosure +
+                                           (1 | LocalityName),
                                    data = conif_df,
-                                   method = "ML")
+                                   REML = F)
                         
-                        mc5 <- lme(log(Conif_Bio) ~ Treatment +
+                        mc5 <- lmer(log(Conif_Bio) ~ Treatment +
                                            Years_Since_Exclosure +
-                                           Treatment*Years_Since_Exclosure,
-                                   random = ~ 1 | LocalityName,
-                                   weights = varIdent(form = ~ 1 | Region),
-                                   data = conif_df,
-                                   method = "ML")
+                                           Treatment*Years_Since_Exclosure +
+                                            (1 | LocalityName),
+                                    data = conif_df,
+                                    REML = F)
                         
                         
         #STEP 6: AIC comparison of nested models --------
@@ -1103,15 +1011,14 @@
                         
         #STEP 7: Re-run model with REML for most accurate parameter estimates --------
         
-                final_model_c <-  lme(log(Conif_Bio) ~ Treatment +
-                                              Productivity_Index +
-                                              Years_Since_Exclosure +
-                                              Treatment*Years_Since_Exclosure +
-                                              Productivity_Index*Years_Since_Exclosure,
-                                      random = ~ 1 | LocalityName,
-                                      weights = varIdent(form = ~ 1 | Region),
-                                      data = conif_df,
-                                      method = "REML")
+                final_model_c <-  lmer(log(Conif_Bio) ~ Treatment +
+                                               Productivity_Index +
+                                               Years_Since_Exclosure +
+                                               Treatment*Years_Since_Exclosure +
+                                               Productivity_Index*Years_Since_Exclosure +
+                                               (1 | LocalityName),
+                                       data = conif_df,
+                                       REML = T)
         
 
                         
@@ -1122,31 +1029,19 @@
                                             "Fitted" = fitted(final_model_c))
                         
                         #Normality of model residuals (histogram)
-                        p1 <- ggplot(data = resid, aes(x = Residuals)) +
-                                geom_histogram(fill = "#b5b5b5", bins = 10) +
-                                theme_bw() +
-                                labs(x = "Model Residuals", y = "Frequency") +
-                                theme(
-                                        axis.title.x = element_text(margin = margin(t = 10)),
-                                        axis.title.y = element_text(margin = margin(r = 10))
-                                ) +
-                                geom_vline(xintercept = mean(resid$Residuals), linetype = 2)
+                        p1 <- histogram(resid(final_model_c), main = "(a)", xlab = "Model Residuals", ylab = "% Total", col = "grey")
                         
                         #Homoskedasticity of model residuals (residuals vs. model-fitted values)
-                        p2 <- qqmath(resid(final_model_c))
-                        p3 <- plot(final_model_c)
+                        p2 <- qqmath(resid(final_model_c), main = "(b)", xlab = "Theoretical Quantiles", ylab = "Model Residuals")
+                        p3 <- plot(final_model_c, main = "(c)", xlab = "Fitted Values", ylab = "Model Residuals")
                         p4 <- plot(final_model_c, sqrt(abs(resid(., scaled=TRUE))) ~ fitted(.),
-                                   type = c("p", "smooth"))
-                        p5 <- plot(final_model_c, resid(., scaled=TRUE) ~ fitted(.) | Treatment,
-                                   abline = 0, type = c("p", "smooth"), layout = c(2,1))
+                                   type = c("p", "smooth"), main = "(d)", xlab = "Fitted Values", ylab = "Std. Model Residuals")
                         
                         #Assemble complex plot
                         top_row <- plot_grid(p1, NULL, p2, ncol = 3, rel_widths = (c(0.45,0.1,0.45)))
                         middle_row <- plot_grid(p3, NULL, p4, ncol = 3, rel_widths = (c(0.45,0.1,0.45)))
-                        bottom_row <- plot_grid(p5, NULL, NULL, ncol = 3, rel_widths = (c(0.45,0.1,0.45)))
                         
-                        
-                        complex_plot <- plot_grid(top_row, NULL, middle_row, NULL, bottom_row, ncol = 1, rel_heights = c(0.31, 0.035, 0.31, 0.035, 0.31))
+                        complex_plot <- plot_grid(top_row, NULL, middle_row, ncol = 1, rel_heights = c(0.475, 0.05, 0.475))
                         complex_plot
                         
                         
@@ -1160,7 +1055,7 @@
                         summary(final_model_c)
                         
                         #Confidence intervals
-                        intervals(final_model_c)
+                        m_b_conif_ci <- confint(final_model_c)
                         
                         
                 #UNTRANSFORMED MODEL W/ UNBROWSED AS REFERENCE
@@ -1170,21 +1065,20 @@
                         conif_df$Treatment <- factor(conif_df$Treatment, levels = c("UB", "B"))
                         
                         #Re-run model
-                        rerun <- lme(log(Conif_Bio) ~ Treatment +
-                                             Productivity_Index +
-                                             Years_Since_Exclosure +
-                                             Treatment*Years_Since_Exclosure +
-                                             Productivity_Index*Years_Since_Exclosure,
-                                     random = ~ 1 | LocalityName,
-                                     weights = varIdent(form = ~ 1 | Region),
-                                     data = conif_df,
-                                     method = "REML")
+                        rerun <- lmer(log(Conif_Bio) ~ Treatment +
+                                              Productivity_Index +
+                                              Years_Since_Exclosure +
+                                              Treatment*Years_Since_Exclosure +
+                                              Productivity_Index*Years_Since_Exclosure +
+                                              (1 | LocalityName),
+                                      data = conif_df,
+                                      REML = T)
                         
                         #New summary
                         summary(rerun)
                         
                         #Confidence intervals
-                        intervals(rerun) 
+                        m_ub_conif_ci <- confint(rerun)
 
                 
         

@@ -573,30 +573,19 @@
                                     "Fitted" = fitted(final_model_a))
                 
                 #Normality of model residuals (histogram)
-                p1 <- ggplot(data = resid, aes(x = Residuals)) +
-                        geom_histogram(fill = "#b5b5b5", bins = 10) +
-                        theme_bw() +
-                        labs(x = "Model Residuals", y = "Frequency") +
-                        theme(
-                                axis.title.x = element_text(margin = margin(t = 10)),
-                                axis.title.y = element_text(margin = margin(r = 10))
-                        ) +
-                        geom_vline(xintercept = mean(resid$Residuals), linetype = 2)
+                p1 <- histogram(resid(final_model_a), main = "(a)", xlab = "Model Residuals", ylab = "% Total", col = "grey")
                 
                 #Homoskedasticity of model residuals (residuals vs. model-fitted values)
-                p2 <- qqmath(resid(final_model_a))
-                p3 <- plot(final_model_a)
+                p2 <- qqmath(resid(final_model_a), main = "(b)", xlab = "Theoretical Quantiles", ylab = "Model Residuals")
+                p3 <- plot(final_model_a, main = "(c)", xlab = "Fitted Values", ylab = "Model Residuals")
                 p4 <- plot(final_model_a, sqrt(abs(resid(., scaled=TRUE))) ~ fitted(.),
-                           type = c("p", "smooth"))
-                p5 <- plot(final_model_a, resid(., scaled=TRUE) ~ fitted(.) | Treatment,
-                           abline = 0, type = c("p", "smooth"), layout = c(2,1))
-                
+                           type = c("p", "smooth"), main = "(d)", xlab = "Fitted Values", ylab = "Std. Model Residuals")
+
                 #Assemble complex plot
                 top_row <- plot_grid(p1, NULL, p2, ncol = 3, rel_widths = (c(0.45,0.1,0.45)))
                 middle_row <- plot_grid(p3, NULL, p4, ncol = 3, rel_widths = (c(0.45,0.1,0.45)))
-                bottom_row <- plot_grid(p5, NULL, NULL, ncol = 3, rel_widths = (c(0.45,0.1,0.45)))
-                
-                complex_plot <- plot_grid(top_row, NULL, middle_row, NULL, bottom_row, ncol = 1, rel_heights = c(0.31, 0.035, 0.31, 0.035, 0.31))
+
+                complex_plot <- plot_grid(top_row, NULL, middle_row, ncol = 1, rel_heights = c(0.475, 0.05, 0.475))
                 complex_plot
                 
 

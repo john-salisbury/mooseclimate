@@ -263,6 +263,47 @@
                 final$Bio_Type <- factor(final$Bio_Type, levels = c("Total", "Deciduous", "Coniferous"))
                 
                 
+                
+                
+                
+        #Average (total bio only) + SE by treatment, region, & year -----
+                
+                #Average -----
+                tot_avg_reg <- aggregate(data$Mean_Plot_Biomass_kg_m2, by = list("Region" = data$Region,
+                                                                                 "Treatment" = data$Treatment,
+                                                                                 "Years_Since_Exclosure" = data$Years_Since_Exclosure),
+                                     FUN = mean)
+                colnames(tot_avg_reg)[4] <- "Avg_Tot_Bio"
+             
+                #SE -----
+                std <- function(x) sd(x)/sqrt(length(x))
+                
+                        #Add placeholder columns
+                        tot_avg_reg$SE <- as.numeric('')
+                        
+                        #Calculate SEs for each species/group, month, and year
+                        for(i in 1:nrow(tot_avg_reg)){
+                                
+                                #Get variables
+                                tr <- tot_avg_reg[i, "Treatment"]
+                                reg <- tot_avg_reg[i, "Region"]
+                                yse <- tot_avg_reg[i, "Years_Since_Exclosure"]
+                                
+                                #Calculate SE for albedo
+                                se <- std(data$Mean_Plot_Biomass_kg_m2[data$Region == reg &
+                                                                               data$Treatment == tr &
+                                                                               data$Years_Since_Exclosure == yse])
+                                
+                                #Add to df
+                                tot_avg_reg[i, "SE"] <- se
+                                
+                        }
+                
+                
+                
+              
+                
+                
 #END PREP DATA FOR PLOTTING ------------------------------------------------------------------
                 
                 
@@ -275,33 +316,84 @@
 
 #GENERATE FINAL PLOTS ----------------------------------------------------------------------
         
-        #Generate plot
-        pd <- position_dodge(0.5)
-                                
-        #Treatment nice names (for plotting)
-        final$TNN[final$Treatment == "B"] <- "Browsed"
-        final$TNN[final$Treatment == "UB"] <- "Unbrowsed"
+        #Position dodge
+        pd <- position_dodge(0.3)
         
-        #Plot                  
-        ggplot(data = final, aes(x = Years_Since_Exclosure, y = Avg_Bio, color = TNN, group = TNN)) +
-                geom_errorbar(aes(ymin = (Avg_Bio - SE), ymax = (Avg_Bio + SE)), colour="#666666", width=0.5, position = pd) +
-                geom_point(aes(shape = TNN), position = pd) +
-                geom_line(aes(linetype = TNN), position = pd) +
-                facet_wrap(~ Bio_Type, ncol = 2) +
-                labs(x = "Years Since Exclosure", y = "Biomass "~(kg/m^2), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
-                scale_x_continuous(breaks = c(1,3,5,7,9,11)) +
-                scale_color_manual(values = viridis(n = 2, alpha = 1, begin = 0, end = 0.6)) +
-                theme_bw() +
-                theme(
-                        panel.grid.minor = element_blank(),
-                        axis.title.x = element_text(margin = margin(t = 10)),
-                        axis.title.y = element_text(margin = margin(r = 10)),
-                        legend.position = c(0.75,0.24),
-                        legend.background = element_rect(fill="#fafafa",
-                                                         size=0.1, linetype="solid", 
-                                                         colour ="#666666"),
-                        legend.margin = margin(10,10,10,10)
-                )
+        #PLOT AVERAGES BY BIO TYPE (ALL REGIONS) -------- 
+                        
+                #Treatment nice names (for plotting)
+                final$TNN[final$Treatment == "B"] <- "Browsed"
+                final$TNN[final$Treatment == "UB"] <- "Unbrowsed"
+                
+                #Generate plot
+                ggplot(data = final, aes(x = Years_Since_Exclosure, y = Avg_Bio, color = TNN, group = TNN)) +
+                        geom_errorbar(aes(ymin = (Avg_Bio - SE), ymax = (Avg_Bio + SE)), colour="#666666", width=0.5, position = pd) +
+                        geom_point(aes(shape = TNN), position = pd) +
+                        geom_line(aes(linetype = TNN), position = pd) +
+                        facet_wrap(~ Bio_Type, ncol = 2) +
+                        labs(x = "Years Since Exclosure", y = "Biomass "~(kg/m^2), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
+                        scale_x_continuous(breaks = c(1,3,5,7,9,11)) +
+                        scale_color_manual(values = viridis(n = 2, alpha = 1, begin = 0, end = 0.6)) +
+                        theme_bw() +
+                        theme(
+                                panel.grid.minor = element_blank(),
+                                axis.title.x = element_text(margin = margin(t = 10)),
+                                axis.title.y = element_text(margin = margin(r = 10)),
+                                legend.position = c(0.75,0.24),
+                                legend.background = element_rect(fill="#fafafa",
+                                                                 size=0.1, linetype="solid", 
+                                                                 colour ="#666666"),
+                                legend.margin = margin(10,10,10,10)
+                        )
+        
+        #PLOT TOTAL BIO BY REGION (ALL REGIONS) -----------      
+        
+                #Treatment nice names (for plotting)
+                tot_avg_reg$TNN[tot_avg_reg$Treatment == "B"] <- "Browsed"
+                tot_avg_reg$TNN[tot_avg_reg$Treatment == "UB"] <- "Unbrowsed"
+                
+                #Label for Hedmark facet
+                ann_text_1 <- data.frame(Years_Since_Exclosure = 7.52, Avg_Tot_Bio = 1.33, lab = "||",
+                                         Region = "Hedmark", TNN = "Browsed")
+                ann_text_2 <- data.frame(Years_Since_Exclosure = 7.52, Avg_Tot_Bio = 0.92, lab = "||",
+                                         Region = "Hedmark", TNN = "Browsed")
+        
+                #Generate plot
+                ggplot(data = tot_avg_reg, aes(x = Years_Since_Exclosure, y = Avg_Tot_Bio, color = TNN, group = TNN)) +
+                        geom_errorbar(aes(ymin = (Avg_Tot_Bio - SE), ymax = (Avg_Tot_Bio + SE)), colour="#666666", width=0.5, position = pd) +
+                        geom_point(aes(shape = TNN), position = pd) +
+                        geom_line(aes(linetype = TNN), position = pd) +
+                        facet_wrap(~ Region, ncol = 2) +
+                        labs(x = "Years Since Exclosure", y = "Biomass "~(kg/m^2), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
+                        scale_x_continuous(breaks = c(1,3,5,7,9,11)) +
+                        scale_color_manual(values = viridis(n = 2, alpha = 1, begin = 0, end = 0.6)) +
+                        theme_bw() +
+                        theme(
+                                panel.grid.minor = element_blank(),
+                                axis.title.x = element_text(margin = margin(t = 10)),
+                                axis.title.y = element_text(margin = margin(r = 10)),
+                                legend.position = c(0.75,0.24),
+                                legend.background = element_rect(fill="#fafafa",
+                                                                 size=0.1, linetype="solid", 
+                                                                 colour ="#666666"),
+                                legend.margin = margin(10,10,10,10)
+                        ) +
+                        geom_label(data = ann_text_1,
+                                   label = "||",
+                                   angle = 0.5,
+                                   color = "#22A884FF",
+                                   size = 3,
+                                   label.padding = unit(0, "lines"),
+                                   label.r = unit(0, "lines"),
+                                   label.size = NA) +
+                        geom_label(data = ann_text_2,
+                                   label = "||",
+                                   angle = 0.5,
+                                   color = "#440154FF",
+                                   size = 3,
+                                   label.padding = unit(-0.04, "lines"),
+                                   label.r = unit(0, "lines"),
+                                   label.size = NA)
         
 
                 
