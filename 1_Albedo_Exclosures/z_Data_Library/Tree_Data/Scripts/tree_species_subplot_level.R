@@ -36,7 +36,7 @@
         data$LocalityName[data$LocalityName == 'Stangeskovene Eidskog '] <- 'Stangeskovene Eidskog'
         
         #Load site data
-        site_data <- read.csv('1_Albedo_Exclosures/z_Data_Library/SustHerb_Site_Data/Usable_Data/cleaned_data.csv', header = TRUE)
+        site_data <- read.csv('1_Albedo_Exclosures/z_Data_Library/SustHerb_Site_Data/Usable_Data/all_sites_data.csv', header = TRUE)
         
 
 #END INITIAL DATA IMPORT + FILTERING ----------------------------------------------------------------------
@@ -279,12 +279,12 @@
                         final <- final[rep(seq_len(nrow(final)), each = 3), ]
 
                         #Loop through sites and process
-                        for(i in 1:length(sites)){
+                        for(i in 1:length(used_sites)){
                                 
                                 print(i)
                                 
                                 #Get site
-                                site <- sites[i]
+                                site <- used_sites[i]
                                 
                                 #Get min YSE
                                 min_yr <- min(final$Years_Since_Exclosure[final$LocalityCode == site])
@@ -358,25 +358,55 @@
                                 
                         }
 
-                #Palette
-                pal <- wes_palette("Darjeeling1")
+                #Define discrete color-blind-friendly palette
+                pal <- c("#009E73",
+                         "#009E73",
+                         "#56B4e9",
+                         "#56B4e9",
+                         "#e69f00",
+                         "#e69f00")
+                
+                #Define legend labels
+                plot_labs_sm <- c("Deciduous (Browsed)",
+                                  "Deciduous (Unbrowsed)",
+                                  "Pine (Browsed)",
+                                  "Pine (Unrowsed)",
+                                  "Spruce (Browsed)",
+                                  "Spruce (Unbrowsed)")
+                
+                
                         
-                ggplot(data = reg_prop, aes(x = Years_Since_Exclosure, y = Mean_Prop, color = Species, fill = Species, linetype = Treatment)) +
-                        geom_ribbon(aes(ymin = (Mean_Prop - SE), ymax = (Mean_Prop + SE), fill = Species), alpha = 0.15, lwd = 0) +
-                        geom_point() +
+                #Generate plot
+                ggplot(data = reg_prop, aes(x = Years_Since_Exclosure, y = Mean_Prop, color = interaction(Treatment, Species), linetype = interaction(Treatment, Species))) +
+                        geom_ribbon(aes(ymin = (Mean_Prop - SE), ymax = (Mean_Prop + SE), fill = interaction(Treatment, Species)), alpha = 0.15, lwd = 0) +
+                        geom_point(aes(shape = interaction(Treatment, Species))) +
                         geom_line() +
-                        facet_wrap(~Region, ncol = 3) +
-                        labs(x = "Years Since Exclosure", y = "Mean Proportion") +
+                        facet_wrap(~Region, ncol = 2) +
+                        labs(x = "Years Since Exclosure", y = "Mean Tree Proportion", linetype = "Treatment", color = "Treatment", fill = "Treatment", shape = "Treatment") +
                         scale_x_continuous(breaks = c(2,4,6,8,10)) +
-                        scale_color_manual(values = pal) +
-                        scale_fill_manual(values = pal) +
+                        scale_linetype_manual(labels = plot_labs_sm,
+                                              values = c(1,4,1,4,1,4)) +
+                        scale_color_manual(values = pal,
+                                           labels = plot_labs_sm) +
+                        scale_fill_manual(values = pal,
+                                          labels = plot_labs_sm) +
+                        scale_shape_manual(values = c(16,17,16,17,16,17),
+                                           labels = plot_labs_sm) +
                         theme_bw() +
                         theme(
-                                legend.position = "bottom",
-                                axis.title.x = element_text(margin = margin(t = 4)),
-                                axis.title.y = element_text(margin = margin(r = 4))
-                                
+                                panel.grid.minor = element_blank(),
+                                panel.grid.major.x = element_blank(),
+                                axis.title.x = element_text(margin = margin(t = 10)),
+                                axis.title.y = element_text(margin = margin(r = 10)),
+                                legend.position = c(0.75,0.24),
+                                legend.background = element_rect(fill="#fafafa",
+                                                                 size=0.1, linetype="solid", 
+                                                                 colour ="#666666"),
+                                legend.title = element_blank(),
+                                legend.margin = margin(0,4,4,4)
                         )
+                
+                                #EXPORT
 
                 
                 
