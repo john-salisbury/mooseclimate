@@ -113,21 +113,30 @@
                 vol_reg$TNN[vol_reg$Treatment == "B"] <- "Browsed"
                 vol_reg$TNN[vol_reg$Treatment == "UB"] <- "Unbrowsed"
                 
+                #REPLACE REGION LABELS WITH COUNTY LABELS -----
+                vol_reg$Counties[vol_reg$Region == "Trøndelag"] <- "Trøndelag"
+                vol_reg$Counties[vol_reg$Region == "Hedmark"] <- "Innlandet and Viken"
+                vol_reg$Counties[vol_reg$Region == "Telemark"] <- "Telemark and Vestfold"
+                
                 #Label for Hedmark facet
                 ann_text_1 <- data.frame(Years_Since_Exclosure = 7.52, Avg_Vol = 31, lab = "||",
-                                         Region = "Hedmark", TNN = "Browsed")
+                                         Counties = "Innlandet and Viken", TNN = "Browsed")
                 ann_text_2 <- data.frame(Years_Since_Exclosure = 7.52, Avg_Vol = 22.3, lab = "||",
-                                         Region = "Hedmark", TNN = "Browsed")
+                                         Counties = "Innlandet and Viken", TNN = "Browsed")
                 
                 #Position
                 pd <- position_dodge(0.3)
+                
+                
+                
+                
                 
                 #Generate plot
                 ggplot(data = vol_reg, aes(x = Years_Since_Exclosure, y = Avg_Vol, color = TNN, group = TNN)) +
                         geom_errorbar(aes(ymin = (Avg_Vol - SE), ymax = (Avg_Vol + SE)), colour="#666666", width=0.5, position = pd) +
                         geom_point(aes(shape = TNN), position = pd) +
                         geom_line(aes(linetype = TNN), position = pd) +
-                        facet_wrap(~ Region, ncol = 2) +
+                        facet_wrap(~ Counties, ncol = 2) +
                         labs(x = "Years Since Exclosure", y = "Volume "~(m^3/ha), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
                         scale_x_continuous(breaks = c(1,3,5,7,9,11)) +
                         scale_color_manual(values = viridis(n = 2, alpha = 1, begin = 0, end = 0.6)) +

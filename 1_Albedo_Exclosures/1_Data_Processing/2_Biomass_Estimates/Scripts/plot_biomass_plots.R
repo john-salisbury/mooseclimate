@@ -352,18 +352,23 @@
                 tot_avg_reg$TNN[tot_avg_reg$Treatment == "B"] <- "Browsed"
                 tot_avg_reg$TNN[tot_avg_reg$Treatment == "UB"] <- "Unbrowsed"
                 
+                #UPDATED LABELS FOR REGIONS -> COUNTIES -----
+                tot_avg_reg$Counties[tot_avg_reg$Region == "Trøndelag"] <- "Trøndelag"
+                tot_avg_reg$Counties[tot_avg_reg$Region == "Hedmark"] <- "Innlandet and Viken"
+                tot_avg_reg$Counties[tot_avg_reg$Region == "Telemark"] <- "Telemark and Vestfold"
+
                 #Label for Hedmark facet
                 ann_text_1 <- data.frame(Years_Since_Exclosure = 7.52, Avg_Tot_Bio = 1.33, lab = "||",
-                                         Region = "Hedmark", TNN = "Browsed")
+                                         Counties = "Innlandet and Viken", TNN = "Browsed")
                 ann_text_2 <- data.frame(Years_Since_Exclosure = 7.52, Avg_Tot_Bio = 0.92, lab = "||",
-                                         Region = "Hedmark", TNN = "Browsed")
+                                         Counties = "Innlandet and Viken", TNN = "Browsed")
         
                 #Generate plot
                 ggplot(data = tot_avg_reg, aes(x = Years_Since_Exclosure, y = Avg_Tot_Bio, color = TNN, group = TNN)) +
                         geom_errorbar(aes(ymin = (Avg_Tot_Bio - SE), ymax = (Avg_Tot_Bio + SE)), colour="#666666", width=0.5, position = pd) +
                         geom_point(aes(shape = TNN), position = pd) +
                         geom_line(aes(linetype = TNN), position = pd) +
-                        facet_wrap(~ Region, ncol = 2) +
+                        facet_wrap(~ Counties, ncol = 2) +
                         labs(x = "Years Since Exclosure", y = "Biomass "~(kg/m^2), color = "Treatment:", shape = "Treatment:", linetype = "Treatment:") +
                         scale_x_continuous(breaks = c(1,3,5,7,9,11)) +
                         scale_color_manual(values = viridis(n = 2, alpha = 1, begin = 0, end = 0.6)) +

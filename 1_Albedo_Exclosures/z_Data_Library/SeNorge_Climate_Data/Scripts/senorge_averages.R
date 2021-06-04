@@ -241,7 +241,7 @@
         #GENERATE PLOTS (Colored by region) -------------
                 
                 #Start here if loading data -----------
-                final_data <- read.csv(final_data, '1_Albedo_Exclosures/z_Data_Library/SeNorge_Climate_Data/Averages/average_climate_data_by_site.csv', header = T)
+                final_data <- read.csv('1_Albedo_Exclosures/z_Data_Library/SeNorge_Climate_Data/Averages/average_climate_data_by_site.csv', header = T)
                 
         
                 #Set strip text labels
@@ -425,9 +425,15 @@
                 #Define discrete color-blind-friendly palette
                 pal <- c("#009E73", "#56B4e9", "#e69f00")
                 
+                #UPDATED LABELS FOR REGIONS -> COUNTIES -----
+                reg_means$Counties[reg_means$Region == "Trøndelag"] <- "Trøndelag"
+                reg_means$Counties[reg_means$Region == "Hedmark"] <- "Innlandet and Viken"
+                reg_means$Counties[reg_means$Region == "Telemark"] <- "Telemark and Vestfold"
+                
+                
                 
                 #TEMPERATURE
-                g1 <- ggplot(reg_means, aes(x = Month, y = Temperature_K, color = Region, fill = Region)) +
+                g1 <- ggplot(reg_means, aes(x = Month, y = Temperature_K, color = Region, fill = Counties)) +
                         geom_ribbon(aes(ymin = (Temperature_K - Temperature_SE), ymax = (Temperature_K + Temperature_SE)), alpha = 0.5, lwd = 0.1) +
                         geom_line() +
                         geom_point(size = 1) +
@@ -451,7 +457,7 @@
                 
                 
                 #SWE
-                g2 <- ggplot(reg_means, aes(x = Month, y = SWE_mm, color = Region, fill = Region)) +
+                g2 <- ggplot(reg_means, aes(x = Month, y = SWE_mm, color = Region, fill = Counties)) +
                         geom_ribbon(aes(ymin = (SWE_mm - SWE_SE), ymax = (SWE_mm + SWE_SE)), alpha = 0.5, lwd = 0.1) +
                         geom_line() +
                         geom_point(size = 1) +
@@ -485,7 +491,7 @@
                         }
                         
                         #Sample plot for universal legend
-                        gl <- ggplot(reg_means, aes(x = Month, y = SWE_mm, color = Region)) +
+                        gl <- ggplot(reg_means, aes(x = Month, y = SWE_mm, color = Counties)) +
                                 geom_ribbon(aes(ymin = (Temperature_K - Temperature_SE), ymax = (Temperature_K + Temperature_SE)), alpha = 0.5, lwd = 0.1) +
                                 geom_line() +
                                 geom_point(size = 1.1) +
@@ -501,7 +507,8 @@
                                         panel.grid.minor = element_blank(),
                                         legend.background = element_rect(fill="#fafafa",
                                                                          size=0.1, linetype="solid", 
-                                                                         colour ="#666666")
+                                                                         colour ="#666666"),
+                                        legend.title = element_blank()
                                 ) +
                                 guides(color=guide_legend(override.aes=list(fill=pal[1:3]))) +
                                 guides(fill=guide_legend(override.aes=list(fill=pal[1:3])))

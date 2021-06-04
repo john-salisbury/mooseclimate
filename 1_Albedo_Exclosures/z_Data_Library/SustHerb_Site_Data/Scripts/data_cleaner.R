@@ -43,4 +43,4 @@
 #WRITE TO CSV
         #write.csv(data, '1_Albedo_Exclosures/z_Data_Library/SustHerb_Site_Data/Usable_Data/cleaned_data.csv', row.names = TRUE)
         write.csv(full, '1_Albedo_Exclosures/z_Data_Library/SustHerb_Site_Data/Usable_Data/all_sites_data.csv', row.names = TRUE)
-        
+   

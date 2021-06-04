@@ -72,9 +72,11 @@
                 }
         }
                 
-        #Get vector of sites
+        #Remove 3 thinned sites
+        bad_sites <- c("MAB", "MAUB", "FLB", "FLUB", "HIB", "HIUB")
+        site_data <- site_data[!site_data$LocalityCode %in% bad_sites,]
         sites <- levels(as.factor(site_data$DistrictID))
-        
+
         #Filter to herbivore densities in corresponding kommunes
         hbio_filt <- hbiomass2015[hbiomass2015$kommnnr %in% sites,]
         
@@ -143,18 +145,33 @@
 
 #GENERATE PLOTS -----------------------------------------------------------------------------
         
-        #Define palette
-        pal <- wes_palette("Darjeeling1")
+        #Define discrete color-blind-friendly palette ----
+        pal <- c("#009E73", "#56B4e9", "#e69f00")
+                
+        #UPDATED LABELS FOR REGIONS -> COUNTIES -----
+        hbio_exp$Counties[hbio_exp$Region == "Trøndelag"] <- "Trøndelag"
+        hbio_exp$Counties[hbio_exp$Region == "Hedmark"] <- "Innlandet and Viken"
+        hbio_exp$Counties[hbio_exp$Region == "Telemark"] <- "Telemark and Vestfold"
                 
         #Boxplot
-        ggplot(data = hbio_exp, aes(x = Species, y = Herb_Density, fill = Region)) + 
-                geom_boxplot() +
+        ggplot(data = hbio_exp, aes(x = Species, y = Herb_Density, fill = Counties)) + 
+                geom_boxplot(outlier.shape = NA) +
                 labs(x = "Herbivore", y = "Metabolic Biomass " ~(kg/m^2)) +
                 theme_bw() +
                 scale_fill_manual(values = pal) +
                 theme(
-                        axis.title.x = element_text(margin = margin(t = 10)),
-                        axis.title.y = element_text(margin = margin(r = 10))
+                        axis.title.x = element_text(margin = margin(t = 10), size = 14),
+                        axis.title.y = element_text(margin = margin(r = 10)),
+                        legend.position = c(1,1),
+                        legend.justification = c(1,1),
+                        legend.background = element_rect(fill="#fafafa",
+                                                         size=0.1, linetype="solid", 
+                                                         colour ="#666666"),
+                        legend.text = element_text(size = 10),
+                        legend.title = element_blank(),
+                        legend.margin = margin(0,4,4,4),
+                        axis.text.x = element_text(size = 11),
+                        axis.text.y = element_text(size = 11)
                 )
 
         

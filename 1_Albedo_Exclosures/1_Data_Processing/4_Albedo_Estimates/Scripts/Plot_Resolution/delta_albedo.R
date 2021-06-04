@@ -185,20 +185,28 @@
                         
                         #Text label
                         delta_sym <- '\U0394'
-                        first <- paste("*Positive values of ", delta_sym, " albedo indicate higher albedo in", sep = "")
-                        sec <- "exclosures relative to corresponding open plots"
+                        first <- paste("*Negative values of ", delta_sym, " albedo indicate higher albedo in", sep = "")
+                        sec <- "open plots relative to corresponding exclosures"
                         lab <- paste(first, sec, sep = "\n")
                         text_annotation <- text_grob(lab, face = "italic", color = "#333333", size = 9)
                         
                         #Position
-                        pd <- position_dodge(0.5)
+                        pd <- position_dodge(0)
                         
+                        #REPLACE REGION LABELS WITH COUNTY LABELS -----
+                        reg_filt$Counties[reg_filt$Region == "Trøndelag"] <- "Trøndelag"
+                        reg_filt$Counties[reg_filt$Region == "Hedmark"] <- "Innlandet and Viken"
+                        reg_filt$Counties[reg_filt$Region == "Telemark"] <- "Telemark and Vestfold"
+                        
+                        
+                        #Complex plot
                         g1 <- ggplot(data = subset(reg_filt, Group == "Composite"), aes(x = Month, y = Mean_Albedo_Diff, group = Years_Since_Exclosure, color = Years_Since_Exclosure, fill = Years_Since_Exclosure)) +
+                                        geom_hline(yintercept = 0, linetype = 2, color = "#666666") +
                                         geom_ribbon(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), alpha = 0.15, lwd = 0) +
                                         geom_point(size = 1.8, position = pd) +
                                         geom_line(position = pd, alpha = 0.8) +
                                         labs(x = "Month", y = expression(Delta*' Albedo (Excl. - Open)'), color = "Years Since Exclosure:", fill = "Years Since Exclosure:", shape = "Years Since Exclosure:") +
-                                        facet_wrap(~Region, ncol = 3) +
+                                        facet_wrap(~ Counties, ncol = 3) +
                                         scale_x_continuous(breaks = c(1:12)) +
                                         scale_y_continuous(limits = c(-0.018, 0.01)) +
                                         scale_color_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
@@ -230,7 +238,7 @@
                                                 geom_point(size = 1.3, position = pd) +
                                                 geom_line(position = pd, alpha = 0.8) +
                                                 labs(x = "Month", y = expression(Delta*' Albedo (Excl. - Open)'), color = "Years Since Exclosure:", fill = "Years Since Exclosure:", shape = "Years Since Exclosure:") +
-                                                facet_wrap(~Region, ncol = 3) +
+                                                facet_wrap(~Counties, ncol = 3) +
                                                 ggtitle("(a) Composite Albedo") +
                                                 scale_x_continuous(breaks = c(1:12)) +
                                                 scale_y_continuous(limits = c(-0.031, 0.031)) +
@@ -389,7 +397,7 @@
                         geom_line(position = pd, alpha = 0.8) +
                         labs(x = "Month", y = expression(Delta*' Albedo (Excl. - Open)'), color = "Years Since Exclosure:", fill = "Years Since Exclosure:", shape = "Years Since Exclosure:") +
                         facet_wrap(~Group, ncol = 4) +
-                        ggtitle("(a) Hedmark") +
+                        ggtitle("(a) Innlandet and Viken") +
                         scale_x_continuous(breaks = c(1:12)) +
                         scale_y_continuous(limits = c(-0.025, 0.013)) +
                         scale_color_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
@@ -414,7 +422,7 @@
                         geom_line(position = pd, alpha = 0.8) +
                         labs(x = "Month", y = expression(Delta*' Albedo (Excl. - Open)'), color = "Years Since Exclosure:", fill = "Years Since Exclosure:", shape = "Years Since Exclosure:") +
                         facet_wrap(~Group, ncol = 4) +
-                        ggtitle("(b) Telemark") +
+                        ggtitle("(b) Telemark and Vestfold") +
                         scale_x_continuous(breaks = c(1:12)) +
                         scale_y_continuous(limits = c(-0.025, 0.013)) +
                         scale_color_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
@@ -508,6 +516,12 @@
                 complex_plot
                 
                 #EXPORT @ 800x900px
+                #REPLACE REGION LABELS WITH COUNTY LABELS -----
+                reg_filt$Counties[reg_filt$Region == "Trøndelag"] <- "Trøndelag"
+                reg_filt$Counties[reg_filt$Region == "Hedmark"] <- "Innlandet and Viken"
+                reg_filt$Counties[reg_filt$Region == "Telemark"] <- "Telemark and Vestfold"
+                
+                
                 
        
                                 

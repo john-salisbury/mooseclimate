@@ -165,6 +165,23 @@
                 #Y-axis label
                 lab <- expression(paste("CO"[2], "-equivalent  (", "kg/m"^2, ")"))
                 
+                #REPLACE REGION LABELS WITH COUNTY LABELS -----
+                
+                        #Avg C
+                        avg_c$Counties[avg_c$Region == "Trøndelag"] <- "Trøndelag"
+                        avg_c$Counties[avg_c$Region == "Hedmark"] <- "Innlandet and Viken"
+                        avg_c$Counties[avg_c$Region == "Telemark"] <- "Telemark and Vestfold"
+                        
+                        #Avg A
+                        avg_a$Counties[avg_a$Region == "Trøndelag"] <- "Trøndelag"
+                        avg_a$Counties[avg_a$Region == "Hedmark"] <- "Innlandet and Viken"
+                        avg_a$Counties[avg_a$Region == "Telemark"] <- "Telemark and Vestfold"
+                        
+                        #Net
+                        avg_net$Counties[avg_net$Region == "Trøndelag"] <- "Trøndelag"
+                        avg_net$Counties[avg_net$Region == "Hedmark"] <- "Innlandet and Viken"
+                        avg_net$Counties[avg_net$Region == "Telemark"] <- "Telemark and Vestfold"
+                
                 #Plot
                 ggplot() +
                         geom_hline(yintercept = 0, linetype = 2, color = "#c6c6c6") +
@@ -174,7 +191,7 @@
                         geom_line(data = avg_a, aes(x = Years_Since_Exclosure, Avg_C_Eq_Delta_A, color = paste("CO2-eq. ", "\U0394", "\U03B1", sep = "")), lwd = 0.65) +
                         geom_ribbon(data = avg_net, aes(x = Years_Since_Exclosure, y = Avg_C_Eq_Net, ymin = (Avg_C_Eq_Net - SE), ymax = (Avg_C_Eq_Net + SE), fill = "Net CO2-eq."), position = position_dodge(0.2), alpha = 0.5, lwd = 0) +
                         geom_line(data = avg_net, aes(x = Years_Since_Exclosure, y = Avg_C_Eq_Net, color = "Net CO2-eq."), lwd = 0.65) +
-                        facet_wrap(~Region, ncol = 2) +
+                        facet_wrap(~ Counties, ncol = 2) +
                         scale_x_continuous(limits = c(1,11), breaks = c(1,3,5,7,9,11)) +
                         scale_color_manual(values = c(pal[1], pal[2], pal[3])) +
                         scale_fill_manual(values = c(pal[1], pal[2], pal[3])) +

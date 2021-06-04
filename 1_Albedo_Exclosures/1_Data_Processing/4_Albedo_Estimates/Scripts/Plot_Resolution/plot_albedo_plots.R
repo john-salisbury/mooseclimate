@@ -113,13 +113,22 @@
                 albedo_filt$Treatment <- as.factor(albedo_filt$Treatment)
                 albedo_filt_sm$Treatment <- as.factor(albedo_filt_sm$Treatment)
                 
+        #REPLACE REGION LABELS WITH COUNTY LABELS -----
+        albedo_filt$Counties[albedo_filt$Region == "Trøndelag"] <- "Trøndelag"
+        albedo_filt$Counties[albedo_filt$Region == "Hedmark"] <- "Innlandet and Viken"
+        albedo_filt$Counties[albedo_filt$Region == "Telemark"] <- "Telemark and Vestfold"
+        albedo_filt_sm$Counties[albedo_filt_sm$Region == "Trøndelag"] <- "Trøndelag"
+        albedo_filt_sm$Counties[albedo_filt_sm$Region == "Hedmark"] <- "Innlandet and Viken"
+        albedo_filt_sm$Counties[albedo_filt_sm$Region == "Telemark"] <- "Telemark and Vestfold"
+                
+                
                 
         #PLOT WITHOUT ERROR -------
         ggplot(data = albedo_filt_sm, aes(x = Month, y = Mean_Plot_Albedo, color = interaction(Treatment, Years_Since_Exclosure), linetype = interaction(Treatment, Years_Since_Exclosure))) +
                 geom_point(size = 1, shape = 1, position = pd) +
                 geom_line(position = pd, alpha = 0.6) +
                 labs(y = "Albedo", color = "Treatment", linetype = "Treatment") +
-                facet_wrap(~Region, ncol = 2) +
+                facet_wrap(~ Counties, ncol = 2) +
                 scale_x_continuous(breaks = c(1:12)) +
                 scale_linetype_manual(labels = plot_labs_sm,
                                       values = c(1,4,1,4,1,4)) +
@@ -139,7 +148,7 @@
                 guides(color=guide_legend(nrow=3,byrow=TRUE)) +
                 guides(linetype=guide_legend(nrow=3,byrow=TRUE))
                 
-                        #Export @ 650x500px
+                        #Export @ 650x450px
                 
                 
         #PLOT DOUBLE-FACETED BY SEASON (WINTER, SUMMER)
@@ -149,7 +158,7 @@
                         geom_point(size = 1, shape = 1, position = pd) +
                         geom_line(position = pd, alpha = 0.6) +
                         labs(y = "Albedo", color = "Treatment", linetype = "Treatment") +
-                        facet_wrap(~Region) +
+                        facet_wrap(~Counties) +
                         scale_x_continuous(breaks = c(1:12)) +
                         scale_y_continuous(limits = c(0.30, 0.47)) +
                         scale_linetype_manual(labels = plot_labs_sm,
@@ -164,7 +173,7 @@
                                 axis.title.y = element_text(margin = margin(r = 10)),
                                 panel.grid.minor = element_blank(),
                                 plot.title = element_text(hjust = 0, face = "bold", margin = margin(b = 6), size = 12),
-                                panel.grid.major = element_blank(),
+                                panel.grid.major = element_blank()
                                 
                         ) +
                         guides(color=guide_legend(nrow=3,byrow=TRUE)) +
@@ -177,7 +186,7 @@
                         geom_point(size = 1, shape = 1, position = pd) +
                         geom_line(position = pd, alpha = 0.6) +
                         labs(y = "Albedo", color = "Treatment", linetype = "Treatment") +
-                        facet_wrap(~Region) +
+                        facet_wrap(~Counties) +
                         scale_x_continuous(breaks = c(1:12)) +
                         scale_y_continuous(limits = c(0.05,0.2), breaks = c(0.05,0.1,0.15,0.2)) +
                         scale_linetype_manual(labels = plot_labs_sm,
@@ -192,8 +201,7 @@
                                 axis.title.y = element_text(margin = margin(r = 10)),
                                 panel.grid.minor = element_blank(),
                                 panel.grid.major = element_blank(),
-                                plot.title = element_text(hjust = 0, face = "bold", margin = margin(b = 6), size = 12),
-                                
+                                plot.title = element_text(hjust = 0, face = "bold", margin = margin(b = 6), size = 12)
                         ) +
                         guides(color=guide_legend(nrow=3,byrow=TRUE)) +
                         guides(linetype=guide_legend(nrow=3,byrow=TRUE))
@@ -214,7 +222,7 @@
                         geom_point(size = 1, shape = 1, position = pd) +
                         geom_line(position = pd, alpha = 0.6) +
                         labs(y = "Albedo", color = "Treatment", linetype = "Treatment") +
-                        facet_wrap(~Region) +
+                        facet_wrap(~Counties) +
                         scale_x_continuous(breaks = c(1:12)) +
                         scale_linetype_manual(labels = plot_labs_sm,
                                               values = c(1,4,1,4,1,4)) +

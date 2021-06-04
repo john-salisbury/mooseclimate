@@ -232,8 +232,10 @@
                 #Add 'Years Since Exclosure' & Treatment variables
         
                         #Filter to 'used sites' (i.e. LocalityCodes present in site_data)
-                        used_sites <- levels(as.factor(site_data$LocalityCode))
-                        final <- final[final$LocalityCode%in% used_sites,]
+                        bad_sites <- c("MAB", "MAUB", "FLB", "FLUB", "HIB", "HIUB")
+        
+                        used_sites <- levels(as.factor(site_data$LocalityCode[!site_data$LocalityCode %in% bad_sites]))
+                        final <- final[final$LocalityCode %in% used_sites,]
                         
                         #Add placeholder columns
                         final$Years_Since_Exclosure <- as.integer('')
@@ -326,8 +328,6 @@
                                                             "Species" = final$Species), FUN = mean)
                 colnames(reg_prop)[5] <- "Mean_Prop"
                 
-                #Remove Hedmark @ 2 YSE, since only 2 sites are in this year
-                reg_prop <- reg_prop[!(reg_prop$Region == "Hedmark" & reg_prop$Years_Since_Exclosure == 2),]
                 
                 #Calculate SE for each mean value
                 
@@ -375,13 +375,17 @@
                                   "Spruce (Unbrowsed)")
                 
                 
-                        
+                #UPDATED LABELS FOR REGIONS -> COUNTIES -----
+                reg_prop$Counties[reg_prop$Region == "Trøndelag"] <- "Trøndelag"
+                reg_prop$Counties[reg_prop$Region == "Hedmark"] <- "Innlandet and Viken"
+                reg_prop$Counties[reg_prop$Region == "Telemark"] <- "Telemark and Vestfold"
+                
                 #Generate plot
                 ggplot(data = reg_prop, aes(x = Years_Since_Exclosure, y = Mean_Prop, color = interaction(Treatment, Species), linetype = interaction(Treatment, Species))) +
                         geom_ribbon(aes(ymin = (Mean_Prop - SE), ymax = (Mean_Prop + SE), fill = interaction(Treatment, Species)), alpha = 0.15, lwd = 0) +
                         geom_point(aes(shape = interaction(Treatment, Species))) +
                         geom_line() +
-                        facet_wrap(~Region, ncol = 2) +
+                        facet_wrap(~ Counties, ncol = 2) +
                         labs(x = "Years Since Exclosure", y = "Mean Tree Proportion", linetype = "Treatment", color = "Treatment", fill = "Treatment", shape = "Treatment") +
                         scale_x_continuous(breaks = c(2,4,6,8,10)) +
                         scale_linetype_manual(labels = plot_labs_sm,
@@ -406,7 +410,7 @@
                                 legend.margin = margin(0,4,4,4)
                         )
                 
-                                #EXPORT
+                                #EXPORT @ 500px x 450px
 
                 
                 
