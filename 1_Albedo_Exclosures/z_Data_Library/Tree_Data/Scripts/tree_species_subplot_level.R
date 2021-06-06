@@ -386,7 +386,7 @@
                         geom_point(aes(shape = interaction(Treatment, Species))) +
                         geom_line() +
                         facet_wrap(~ Counties, ncol = 2) +
-                        labs(x = "Years Since Exclosure", y = "Mean Tree Proportion", linetype = "Treatment", color = "Treatment", fill = "Treatment", shape = "Treatment") +
+                        labs(x = "Years Since Exclosure", y = "Relative Abundance", linetype = "Treatment", color = "Treatment", fill = "Treatment", shape = "Treatment") +
                         scale_x_continuous(breaks = c(2,4,6,8,10)) +
                         scale_linetype_manual(labels = plot_labs_sm,
                                               values = c(1,4,1,4,1,4)) +

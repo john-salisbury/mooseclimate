@@ -213,9 +213,50 @@
                                 #EXPORT @ 450x400px
                 
                 
-                
+        #SITE PAIR COMPARISON (w/ Trøndelag) ----
         
+                #Global look at net CO2-eq. trends
+                ggplot(data = data[data$Region == "Trøndelag",], aes(x = Years_Since_Exclosure, y = Net_C_Eq, color = LocalityName)) +
+                        geom_line()
                 
+                        #Bratsberg and NSB Verdal have differing trends
+                
+                #Faceted plot ------
+                
+                        #Define df ---
+                        d1 <- data[data$LocalityName == "bratsberg" | data$LocalityName == "nsb_verdal",]
+                
+                        #Site labels (for use in paper) ---
+                        d1$Site_Label <- as.character('')
+                        d1$Site_Label[d1$LocalityName == "bratsberg"] <- "Site 8"
+                        d1$Site_Label[d1$LocalityName == "nsb_verdal"] <- "Site 5"
+                        
+                        #Generate plot
+                        ggplot() +
+                                geom_hline(yintercept = 0, linetype = 2, color = "#c6c6c6") +
+                                geom_line(data = d1, aes(x = Years_Since_Exclosure, C_Eq_Delta_C, color = paste("CO2-eq. ", "\U0394", "C", sep = "")), lwd = 1) +
+                                geom_line(data = d1, aes(x = Years_Since_Exclosure, C_Eq_Delta_A, color = paste("CO2-eq. ", "\U0394", "\U03B1", sep = "")), lwd = 1) +
+                                geom_line(data = d1, aes(x = Years_Since_Exclosure, y = Net_C_Eq, color = "Net CO2-eq."), lwd = 1) +
+                                scale_x_continuous(limits = c(1,11), breaks = c(1,3,5,7,9,11)) +
+                                scale_color_manual(values = c(pal[1], pal[2], pal[3])) +
+                                scale_fill_manual(values = c(pal[1], pal[2], pal[3])) +
+                                facet_wrap(~Site_Label) +
+                                labs(x = "Years Since Exclosure", y = lab, fill = "", color = "") +
+                                theme_bw() +
+                                theme(
+                                        panel.grid.minor = element_blank(),
+                                        panel.grid.major.x = element_blank(),
+                                        axis.title.x = element_text(margin = margin(t = 10)),
+                                        axis.title.y = element_text(margin = margin(r = 10)),
+                                        legend.position = "bottom",
+                                        legend.background = element_rect(fill="#fafafa",
+                                                                         size=0.1, linetype="solid", 
+                                                                         colour ="#666666")
+                                )
+                        
+                                #Export @ 500x300px
+
+                        
 
         
 #CALCULATE AVERAGES + SE BY REGION & PLOT ----------------------------------------------------------------------------------------------
