@@ -392,6 +392,7 @@
 
                 #Hedmark - top-left
                 g1 <- ggplot(data = subset(reg_filt, Region == "Hedmark"), aes(x = Month, y = Mean_Albedo_Diff, group = Years_Since_Exclosure, color = Years_Since_Exclosure, fill = Years_Since_Exclosure)) +
+                        geom_hline(yintercept = 0, linetype = 2, color = "#666666") +
                         geom_ribbon(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), alpha = 0.15, lwd = 0) +
                         geom_point(size = 1.3, position = pd) +
                         geom_line(position = pd, alpha = 0.8) +
@@ -417,6 +418,7 @@
                 
                 #Telemark - top-right
                 g2 <- ggplot(data = subset(reg_filt, Region == "Telemark"), aes(x = Month, y = Mean_Albedo_Diff, group = Years_Since_Exclosure, color = Years_Since_Exclosure, fill = Years_Since_Exclosure)) +
+                        geom_hline(yintercept = 0, linetype = 2, color = "#666666") +
                         geom_ribbon(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), alpha = 0.15, lwd = 0) +
                         geom_point(size = 1.3, position = pd) +
                         geom_line(position = pd, alpha = 0.8) +
@@ -442,6 +444,7 @@
                 
                 #Trøndelag - bottom-left
                 g3 <- ggplot(data = subset(reg_filt, Region == "Trøndelag"), aes(x = Month, y = Mean_Albedo_Diff, group = Years_Since_Exclosure, color = Years_Since_Exclosure, fill = Years_Since_Exclosure)) +
+                        geom_hline(yintercept = 0, linetype = 2, color = "#666666") +
                         geom_ribbon(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), alpha = 0.15, lwd = 0) +
                         geom_point(size = 1.3, position = pd) +
                         geom_line(position = pd, alpha = 0.8) +
@@ -508,19 +511,15 @@
                 
                 #Generate complex plot
                 delta_sym <- '\U0394'
-                first <- paste("*Positive values of ", delta_sym, " albedo indicate higher albedo in", sep = "")
-                sec <- "exclosures relative to corresponding open plots"
+                first <- paste("*Negative values of ", delta_sym, " albedo indicate higher albedo in", sep = "")
+                sec <- "open plots relative to corresponding exclosures"
                 lab <- paste(first, sec, sep = "\n")
                 text_annotation <- text_grob(lab, face = "italic", color = "#333333", size = 9)
                 complex_plot <- plot_grid(text_annotation, NULL, g1, NULL, g2, NULL, g3, NULL, shared_legend, ncol = 1, rel_heights = c(0.05, 0.025, 0.275, 0.025, 0.275, 0.025, 0.275, 0.025, 0.05))
                 complex_plot
                 
                 #EXPORT @ 800x900px
-                #REPLACE REGION LABELS WITH COUNTY LABELS -----
-                reg_filt$Counties[reg_filt$Region == "Trøndelag"] <- "Trøndelag"
-                reg_filt$Counties[reg_filt$Region == "Hedmark"] <- "Innlandet and Viken"
-                reg_filt$Counties[reg_filt$Region == "Telemark"] <- "Telemark and Vestfold"
-                
+               
                 
                 
        

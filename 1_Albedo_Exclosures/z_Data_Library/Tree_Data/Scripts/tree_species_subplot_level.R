@@ -412,8 +412,6 @@
                 
                                 #EXPORT @ 500px x 450px
 
-                
-                
         #AVG SPECIES PROPORTIONS BY SITE & TREATMENT -----
                 
         
