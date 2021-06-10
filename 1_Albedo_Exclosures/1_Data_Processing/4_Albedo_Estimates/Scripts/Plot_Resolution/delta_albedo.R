@@ -196,7 +196,7 @@
                         #REPLACE REGION LABELS WITH COUNTY LABELS -----
                         reg_filt$Counties[reg_filt$Region == "Trøndelag"] <- "Trøndelag"
                         reg_filt$Counties[reg_filt$Region == "Hedmark"] <- "Innlandet and Viken"
-                        reg_filt$Counties[reg_filt$Region == "Telemark"] <- "Telemark and Vestfold"
+                        reg_filt$Counties[reg_filt$Region == "Telemark"] <- "Vestfold and Telemark"
                         
                         
                         #Complex plot
@@ -416,15 +416,16 @@
                 g1
                 
                 
-                #Telemark - top-right
-                g2 <- ggplot(data = subset(reg_filt, Region == "Telemark"), aes(x = Month, y = Mean_Albedo_Diff, group = Years_Since_Exclosure, color = Years_Since_Exclosure, fill = Years_Since_Exclosure)) +
+                
+                #Trøndelag - bottom-left
+                g2 <- ggplot(data = subset(reg_filt, Region == "Trøndelag"), aes(x = Month, y = Mean_Albedo_Diff, group = Years_Since_Exclosure, color = Years_Since_Exclosure, fill = Years_Since_Exclosure)) +
                         geom_hline(yintercept = 0, linetype = 2, color = "#666666") +
                         geom_ribbon(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), alpha = 0.15, lwd = 0) +
                         geom_point(size = 1.3, position = pd) +
                         geom_line(position = pd, alpha = 0.8) +
                         labs(x = "Month", y = expression(Delta*' Albedo (Excl. - Open)'), color = "Years Since Exclosure:", fill = "Years Since Exclosure:", shape = "Years Since Exclosure:") +
                         facet_wrap(~Group, ncol = 4) +
-                        ggtitle("(b) Telemark and Vestfold") +
+                        ggtitle("(b) Trøndelag") +
                         scale_x_continuous(breaks = c(1:12)) +
                         scale_y_continuous(limits = c(-0.025, 0.013)) +
                         scale_color_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +
@@ -442,15 +443,15 @@
                 g2
                 
                 
-                #Trøndelag - bottom-left
-                g3 <- ggplot(data = subset(reg_filt, Region == "Trøndelag"), aes(x = Month, y = Mean_Albedo_Diff, group = Years_Since_Exclosure, color = Years_Since_Exclosure, fill = Years_Since_Exclosure)) +
+                #Telemark
+                g3 <- ggplot(data = subset(reg_filt, Region == "Telemark"), aes(x = Month, y = Mean_Albedo_Diff, group = Years_Since_Exclosure, color = Years_Since_Exclosure, fill = Years_Since_Exclosure)) +
                         geom_hline(yintercept = 0, linetype = 2, color = "#666666") +
                         geom_ribbon(aes(ymin = (Mean_Albedo_Diff - SE), ymax = (Mean_Albedo_Diff + SE)), alpha = 0.15, lwd = 0) +
                         geom_point(size = 1.3, position = pd) +
                         geom_line(position = pd, alpha = 0.8) +
                         labs(x = "Month", y = expression(Delta*' Albedo (Excl. - Open)'), color = "Years Since Exclosure:", fill = "Years Since Exclosure:", shape = "Years Since Exclosure:") +
                         facet_wrap(~Group, ncol = 4) +
-                        ggtitle("(c) Trøndelag") +
+                        ggtitle("(c) Vestfold and Telemark") +
                         scale_x_continuous(breaks = c(1:12)) +
                         scale_y_continuous(limits = c(-0.025, 0.013)) +
                         scale_color_manual(labels = c("2 yrs", "4 yrs", "6 yrs", "8 yrs", "10 yrs"), values = plot_pal) +

@@ -151,7 +151,7 @@
         #UPDATED LABELS FOR REGIONS -> COUNTIES -----
         hbio_exp$Counties[hbio_exp$Region == "Trøndelag"] <- "Trøndelag"
         hbio_exp$Counties[hbio_exp$Region == "Hedmark"] <- "Innlandet and Viken"
-        hbio_exp$Counties[hbio_exp$Region == "Telemark"] <- "Telemark and Vestfold"
+        hbio_exp$Counties[hbio_exp$Region == "Telemark"] <- "Vestfold and Telemark"
                 
         #Boxplot
         ggplot(data = hbio_exp, aes(x = Species, y = Herb_Density, fill = Counties)) + 

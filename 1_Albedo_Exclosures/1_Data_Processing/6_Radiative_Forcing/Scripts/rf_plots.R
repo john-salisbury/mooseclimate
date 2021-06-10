@@ -170,17 +170,17 @@
                         #Avg C
                         avg_c$Counties[avg_c$Region == "Trøndelag"] <- "Trøndelag"
                         avg_c$Counties[avg_c$Region == "Hedmark"] <- "Innlandet and Viken"
-                        avg_c$Counties[avg_c$Region == "Telemark"] <- "Telemark and Vestfold"
+                        avg_c$Counties[avg_c$Region == "Telemark"] <- "Vestfold and Telemark"
                         
                         #Avg A
                         avg_a$Counties[avg_a$Region == "Trøndelag"] <- "Trøndelag"
                         avg_a$Counties[avg_a$Region == "Hedmark"] <- "Innlandet and Viken"
-                        avg_a$Counties[avg_a$Region == "Telemark"] <- "Telemark and Vestfold"
+                        avg_a$Counties[avg_a$Region == "Telemark"] <- "Vestfold and Telemark"
                         
                         #Net
                         avg_net$Counties[avg_net$Region == "Trøndelag"] <- "Trøndelag"
                         avg_net$Counties[avg_net$Region == "Hedmark"] <- "Innlandet and Viken"
-                        avg_net$Counties[avg_net$Region == "Telemark"] <- "Telemark and Vestfold"
+                        avg_net$Counties[avg_net$Region == "Telemark"] <- "Vestfold and Telemark"
                 
                 #Plot
                 ggplot() +

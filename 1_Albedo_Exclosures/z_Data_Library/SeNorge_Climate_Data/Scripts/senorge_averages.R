@@ -428,12 +428,12 @@
                 #UPDATED LABELS FOR REGIONS -> COUNTIES -----
                 reg_means$Counties[reg_means$Region == "Trøndelag"] <- "Trøndelag"
                 reg_means$Counties[reg_means$Region == "Hedmark"] <- "Innlandet and Viken"
-                reg_means$Counties[reg_means$Region == "Telemark"] <- "Telemark and Vestfold"
+                reg_means$Counties[reg_means$Region == "Telemark"] <- "Vestfold and Telemark"
                 
                 
                 
                 #TEMPERATURE
-                g1 <- ggplot(reg_means, aes(x = Month, y = Temperature_K, color = Region, fill = Counties)) +
+                g1 <- ggplot(reg_means, aes(x = Month, y = Temperature_K, color = Counties, fill = Counties)) +
                         geom_ribbon(aes(ymin = (Temperature_K - Temperature_SE), ymax = (Temperature_K + Temperature_SE)), alpha = 0.5, lwd = 0.1) +
                         geom_line() +
                         geom_point(size = 1) +
@@ -457,11 +457,11 @@
                 
                 
                 #SWE
-                g2 <- ggplot(reg_means, aes(x = Month, y = SWE_mm, color = Region, fill = Counties)) +
+                g2 <- ggplot(reg_means, aes(x = Month, y = SWE_mm, color = Counties, fill = Counties)) +
                         geom_ribbon(aes(ymin = (SWE_mm - SWE_SE), ymax = (SWE_mm + SWE_SE)), alpha = 0.5, lwd = 0.1) +
                         geom_line() +
                         geom_point(size = 1) +
-                        labs(x = "Month", y = "SWE (mm)") + 
+                        labs(x = "Month", y = "Snow Water Equivalent (mm)") + 
                         theme_bw() +
                         ggtitle("(b)") +
                         scale_x_continuous(limits = c(1, 12), breaks = c(1:12)) +
@@ -495,7 +495,7 @@
                                 geom_ribbon(aes(ymin = (Temperature_K - Temperature_SE), ymax = (Temperature_K + Temperature_SE)), alpha = 0.5, lwd = 0.1) +
                                 geom_line() +
                                 geom_point(size = 1.1) +
-                                labs(x = "Month", y = "SWE (mm)") + 
+                                labs(x = "Month", y = "Snow Water Equivalent (mm)") + 
                                 theme_bw() +
                                 scale_x_continuous(limits = c(1, 12), breaks = c(1:12)) +
                                 scale_color_manual(values = c(pal[1], pal[2], pal[3])) +

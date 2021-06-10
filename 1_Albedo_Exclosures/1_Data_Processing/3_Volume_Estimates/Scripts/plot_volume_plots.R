@@ -116,7 +116,7 @@
                 #REPLACE REGION LABELS WITH COUNTY LABELS -----
                 vol_reg$Counties[vol_reg$Region == "Trøndelag"] <- "Trøndelag"
                 vol_reg$Counties[vol_reg$Region == "Hedmark"] <- "Innlandet and Viken"
-                vol_reg$Counties[vol_reg$Region == "Telemark"] <- "Telemark and Vestfold"
+                vol_reg$Counties[vol_reg$Region == "Telemark"] <- "Vestfold and Telemark"
                 
                 #Label for Hedmark facet
                 ann_text_1 <- data.frame(Years_Since_Exclosure = 7.52, Avg_Vol = 31, lab = "||",

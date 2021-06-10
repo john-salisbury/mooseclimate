@@ -355,7 +355,7 @@
                 #UPDATED LABELS FOR REGIONS -> COUNTIES -----
                 tot_avg_reg$Counties[tot_avg_reg$Region == "Trøndelag"] <- "Trøndelag"
                 tot_avg_reg$Counties[tot_avg_reg$Region == "Hedmark"] <- "Innlandet and Viken"
-                tot_avg_reg$Counties[tot_avg_reg$Region == "Telemark"] <- "Telemark and Vestfold"
+                tot_avg_reg$Counties[tot_avg_reg$Region == "Telemark"] <- "Vestfold and Telemark"
 
                 #Label for Hedmark facet
                 ann_text_1 <- data.frame(Years_Since_Exclosure = 7.52, Avg_Tot_Bio = 1.33, lab = "||",

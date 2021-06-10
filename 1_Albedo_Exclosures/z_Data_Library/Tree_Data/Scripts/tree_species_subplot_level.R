@@ -378,7 +378,7 @@
                 #UPDATED LABELS FOR REGIONS -> COUNTIES -----
                 reg_prop$Counties[reg_prop$Region == "Trøndelag"] <- "Trøndelag"
                 reg_prop$Counties[reg_prop$Region == "Hedmark"] <- "Innlandet and Viken"
-                reg_prop$Counties[reg_prop$Region == "Telemark"] <- "Telemark and Vestfold"
+                reg_prop$Counties[reg_prop$Region == "Telemark"] <- "Vestfold and Telemark"
                 
                 #Generate plot
                 ggplot(data = reg_prop, aes(x = Years_Since_Exclosure, y = Mean_Prop, color = interaction(Treatment, Species), linetype = interaction(Treatment, Species))) +
