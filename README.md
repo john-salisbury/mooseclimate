@@ -23,8 +23,30 @@ An analysis of aboveground tree biomass, surface albedo, and climate forcing acr
 * Net climate forcing estimates made by NTNU Department of Industrial Ecology using methods adapted from [Cherubini et al. (2018)](https://www.tandfonline.com/doi/abs/10.1080/1747423X.2018.1529831?journalCode=tlus20)
 
 **Key Results**:
-![Biomass trends](biomass_trends.png)
-![Delta albedo trends](delta_albedo.png)
-![Biomass trends](net_rf.png)
+<img src="biomass_trends.png" alt="Biomass Trends" style="max-width: 500px; margin: 2em auto 0; display: block; padding-top: 2em;">
+<p style="text-align:center; font-size: 11px; font-weight: bold; max-width: 800px; margin: auto;">Total aboveground tree biomass (kg m-3) within open plots and moose exclosures
+in the years after initial exclosure, averaged within each study region. Error bars represent
+standard error. Few study sites in Innlandet and Viken had data past seven years since
+exclosure.</p>
 
+---
+
+<img src="delta_albedo.png" alt="Delta Albedo" style="max-width: 700px; margin: 2em auto 0; display: block; border-top: 1px solid #eee; padding-top: 2em;">
+<p style="text-align:center; font-size: 11px; font-weight: bold; max-width: 800px; margin: auto;">Mean difference in albedo between moose exclosures and open plots, where
+difference equals exclosure albedo minus open plot albedo. Differences are averaged
+within each study region. Line colors correspond to number of years since exclosure, while
+shading indicates standard error. Horizontal dashed line indicates no difference in albedo.
+Negative values indicate higher albedo in open plots relative to exclosures.</p>
+
+---
+
+<img src="net_rf.png" alt="Net Radiative Forcing" style="max-width: 500px; margin: 2em auto 0; display: block; border-top: 1px solid #eee; padding-top: 2em;">
+<p style="text-align:center; font-size: 11px; font-weight: bold; max-width: 800px; margin: auto;">Effect of moose exclosure on annual CO2-equivalents (kg CO2-eq. m-2) at 44 study
+sites in Norway, averaged by region. Positive values indicate that exclosure has a warming
+climate effect equivalent to more CO2 in the atmosphere. Negative values indicate that
+exclosure has a cooling effect equivalent to less CO2 in the atmosphere. Green lines
+represent climate changes due to differences in aboveground carbon between exclosures
+and open plots. Blue lines represent climate changes due to differences in albedo. Orange
+lines indicate the net climate impact of moose exclosure. Shading represents standard
+error.</p>
 ---
