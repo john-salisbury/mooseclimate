@@ -33,17 +33,22 @@ standard error. Few study sites in Innlandet and Viken had data past seven years
 exclosure.</p>
 
 ---
-
-<img src="delta_albedo.png" alt="Delta Albedo" width="700">
+<p align="center">
+	<img src="delta_albedo.png" alt="Delta Albedo" width="700">
+</p>
+<p align="center">
 Mean difference in albedo between moose exclosures and open plots, where
 difference equals exclosure albedo minus open plot albedo. Differences are averaged
 within each study region. Line colors correspond to number of years since exclosure, while
 shading indicates standard error. Horizontal dashed line indicates no difference in albedo.
-Negative values indicate higher albedo in open plots relative to exclosures.</p>
+Negative values indicate higher albedo in open plots relative to exclosures.
+</p>
 
 ---
-
-<img src="net_rf.png" alt="Net RF Values" width="500">
+<p align="center">
+	<img src="net_rf.png" alt="Net RF Values" width="500">
+</p>
+<p align="center">
 Effect of moose exclosure on annual CO2-equivalents (kg CO2-eq. m-2) at 44 study
 sites in Norway, averaged by region. Positive values indicate that exclosure has a warming
 climate effect equivalent to more CO2 in the atmosphere. Negative values indicate that
@@ -52,5 +57,6 @@ represent climate changes due to differences in aboveground carbon between exclo
 and open plots. Blue lines represent climate changes due to differences in albedo. Orange
 lines indicate the net climate impact of moose exclosure. Shading represents standard
 error.
+</p>
 
 ---
