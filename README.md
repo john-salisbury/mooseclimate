@@ -23,8 +23,8 @@ An analysis of aboveground tree biomass, surface albedo, and climate forcing acr
 * Net climate forcing estimates made by NTNU Department of Industrial Ecology using methods adapted from [Cherubini et al. (2018)](https://www.tandfonline.com/doi/abs/10.1080/1747423X.2018.1529831?journalCode=tlus20)
 
 **Key Results**:
-![Biomass trends](https://john-salisbury.github.io/mooseclimate/img/biomass_trends.png)
-![Delta albedo trends](https://john-salisbury.github.io/mooseclimate/img/delta_albedo.png)
-![Biomass trends](https://john-salisbury.github.io/mooseclimate/img/net_rf.png)
+![Biomass trends](biomass_trends.png)
+![Delta albedo trends](delta_albedo.png)
+![Biomass trends](net_rf.png)
 
 ---
